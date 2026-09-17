@@ -214,6 +214,62 @@ io.on('connection', (socket) => {
     room.playAgain();
   });
 
+  // --- WEBRTC VOICE SIGNALING ---
+  socket.on('voice_join', ({ roomCode, playerId }) => {
+    const room = rooms.get(roomCode);
+    if (!room) return;
+    socket.data.voiceJoined = true;
+
+    // Send list of other human connected peers in this room to the joining peer
+    const existingPeers = room.players
+      .filter(p => !p.isBot && p.socketId && p.socketId !== socket.id)
+      .map(p => ({ socketId: p.socketId, playerId: p.id }));
+
+    socket.emit('voice_all_peers', { peers: existingPeers });
+
+    // Announce to other peers in room
+    socket.to(roomCode).emit('voice_peer_joined', {
+      socketId: socket.id,
+      playerId
+    });
+  });
+
+  socket.on('voice_signal', ({ toSocketId, signal }) => {
+    io.to(toSocketId).emit('voice_signal', {
+      fromSocketId: socket.id,
+      signal
+    });
+  });
+
+  socket.on('voice_status_update', ({ roomCode, playerId, isMuted, isDeafened, isSpeaking }) => {
+    const room = rooms.get(roomCode);
+    if (!room) return;
+    const player = room.players.find(p => p.id === playerId);
+    if (player) {
+      player.voiceStatus = {
+        isMuted: Boolean(isMuted),
+        isDeafened: Boolean(isDeafened),
+        isSpeaking: Boolean(isSpeaking)
+      };
+    }
+    // Broadcast status to room
+    io.to(roomCode).emit('voice_player_status', {
+      socketId: socket.id,
+      playerId,
+      isMuted: Boolean(isMuted),
+      isDeafened: Boolean(isDeafened),
+      isSpeaking: Boolean(isSpeaking)
+    });
+  });
+
+  socket.on('voice_leave', ({ roomCode, playerId }) => {
+    socket.data.voiceJoined = false;
+    socket.to(roomCode).emit('voice_peer_left', {
+      socketId: socket.id,
+      playerId
+    });
+  });
+
   socket.on('disconnect', () => {
     const roomCode = socket.data.roomCode;
     if (!roomCode) return;

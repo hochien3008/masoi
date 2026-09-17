@@ -197,7 +197,10 @@ export default function VotingPhase({
                   }}
                 >
                   <div className="player-info">
-                    <div className="player-avatar">{p.avatar}</div>
+                    <div className={`player-avatar ${p.isSpeaking ? 'speaking-avatar' : ''}`}>
+                      {p.avatar}
+                      {p.isSpeaking && <span className="speaking-badge" title="Đang nói">🎙️</span>}
+                    </div>
                     <div className="player-name" style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                       <span>{p.name}</span>
                       {p.id === myPlayerId && <span className="you-badge">BẠN</span>}
@@ -273,7 +276,10 @@ export default function VotingPhase({
           {alivePlayers.map(p => (
             <div key={p.id} className="player-card" style={{ opacity: 0.85 }}>
               <div className="player-info">
-                <div className="player-avatar">{p.avatar}</div>
+                <div className={`player-avatar ${p.isSpeaking ? 'speaking-avatar' : ''}`}>
+                  {p.avatar}
+                  {p.isSpeaking && <span className="speaking-badge" title="Đang nói">🎙️</span>}
+                </div>
                 <div className="player-name" style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                   <span>{p.name}</span>
                   {p.hauntVotes > 0 && (

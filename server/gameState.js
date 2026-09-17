@@ -88,7 +88,8 @@ export class Room {
       seerInspectionResult: null, // stored result of investigation
       whisperReceived: null, // ghost whisper text for morning
       hauntVotes: 0, // ghost haunt penalty
-      blessShield: 0 // ghost bless protection
+      blessShield: 0, // ghost bless protection
+      voiceStatus: { isMuted: true, isDeafened: false, isSpeaking: false }
     };
 
     this.players.push(player);
@@ -915,6 +916,7 @@ export class Room {
           hasActedNight: p.nightAction !== null,
           hauntVotes: p.hauntVotes || 0,
           blessShield: p.blessShield || 0,
+          voiceStatus: p.voiceStatus || { isMuted: true, isDeafened: false, isSpeaking: false },
           role: canSeeRole ? p.role : null,
           roleDetails: canSeeRole && p.role ? ROLES[p.role] : null
         };

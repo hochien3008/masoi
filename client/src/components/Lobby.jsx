@@ -138,10 +138,13 @@ export default function Lobby({
           return (
             <div key={p.id} className="player-card">
               <div className="player-info">
-                <div className="player-avatar">
+                <div className={`player-avatar ${p.isSpeaking ? 'speaking-avatar' : ''}`}>
                   {p.avatar}
                   {p.isHost && (
                     <span className="host-crown" title="Chủ phòng">👑</span>
+                  )}
+                  {p.isSpeaking && (
+                    <span className="speaking-badge" title="Đang nói">🎙️</span>
                   )}
                 </div>
                 <div>

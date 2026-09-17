@@ -12,6 +12,8 @@ import DiscussionPhase from './components/DiscussionPhase';
 import VotingPhase from './components/VotingPhase';
 import GameOverModal from './components/GameOverModal';
 import HunterShotModal from './components/HunterShotModal';
+import VoiceBar from './components/VoiceBar';
+import { webrtcManager } from './utils/webrtcManager';
 
 // Initialize socket connection
 const socket = io('/', {
@@ -25,6 +27,7 @@ export default function App() {
   const [errorMessage, setErrorMessage] = useState('');
   const [muted, setMuted] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [peerVoiceStatuses, setPeerVoiceStatuses] = useState({});
 
   // Extract initial room code from URL params
   const urlParams = new URLSearchParams(window.location.search);
@@ -80,6 +83,24 @@ export default function App() {
       socket.off('error_message');
     };
   }, []);
+
+  // Initialize WebRTC Voice when entering a room
+  useEffect(() => {
+    if (gameState?.code && gameState?.myPlayerId) {
+      webrtcManager.init(
+        socket,
+        gameState.code,
+        gameState.myPlayerId,
+        null,
+        (playerId, status) => {
+          setPeerVoiceStatuses(prev => ({
+            ...prev,
+            [playerId]: status
+          }));
+        }
+      );
+    }
+  }, [gameState?.code, gameState?.myPlayerId]);
 
   const handleToggleSound = () => {
     const isMuted = sounds.toggleMute();
@@ -168,6 +189,7 @@ export default function App() {
   };
 
   const handleLeaveRoom = () => {
+    webrtcManager.destroy();
     sessionStorage.removeItem('nightfall_room_code');
     sessionStorage.removeItem('nightfall_player_id');
     window.history.replaceState({}, '', window.location.pathname);
@@ -181,7 +203,14 @@ export default function App() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const myPlayer = gameState?.players.find((p) => p.id === gameState.myPlayerId);
+  const enrichedPlayers = (gameState?.players || []).map(p => ({
+    ...p,
+    isSpeaking: p.id === gameState?.myPlayerId
+      ? webrtcManager.isSpeaking
+      : Boolean(peerVoiceStatuses[p.id]?.isSpeaking)
+  }));
+
+  const myPlayer = enrichedPlayers.find((p) => p.id === gameState?.myPlayerId);
 
   return (
     <div className="nightfall-app">
@@ -202,6 +231,17 @@ export default function App() {
               <span>{gameState.code}</span>
               {copied ? <Check size={14} color="#10b981" /> : <Copy size={14} />}
             </div>
+          )}
+
+          {/* Compact Voice Controls in Top Bar */}
+          {gameState && (
+            <VoiceBar
+              roomCode={gameState.code}
+              playerId={gameState.myPlayerId}
+              phase={gameState.phase}
+              isAlive={gameState.isAlive}
+              players={enrichedPlayers}
+            />
           )}
 
           <button
@@ -255,7 +295,7 @@ export default function App() {
       {gameState && gameState.phase === 'LOBBY' && (
         <Lobby
           roomCode={gameState.code}
-          players={gameState.players}
+          players={enrichedPlayers}
           isHost={gameState.isHost}
           myPlayerId={gameState.myPlayerId}
           selectedSpecialRoles={gameState.selectedSpecialRoles}
@@ -316,7 +356,7 @@ export default function App() {
         <DiscussionPhase
           dayNumber={gameState.dayNumber}
           timer={gameState.timer}
-          players={gameState.players}
+          players={enrichedPlayers}
           myPlayerId={gameState.myPlayerId}
           isHost={gameState.isHost}
           isAlive={gameState.isAlive}
@@ -330,7 +370,7 @@ export default function App() {
         <VotingPhase
           phase={gameState.phase}
           timer={gameState.timer}
-          players={gameState.players}
+          players={enrichedPlayers}
           myPlayerId={gameState.myPlayerId}
           isAlive={gameState.isAlive}
           voteResults={gameState.voteResults}
@@ -341,7 +381,7 @@ export default function App() {
       {gameState && gameState.phase === 'GAME_OVER' && (
         <GameOverModal
           winner={gameState.winner}
-          players={gameState.players}
+          players={enrichedPlayers}
           isHost={gameState.isHost}
           onPlayAgain={handlePlayAgain}
         />

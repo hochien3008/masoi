@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MessageSquare, FastForward, Users, Send, Eye } from 'lucide-react';
+import { MessageSquare, FastForward, Users, Send, Eye, MicOff } from 'lucide-react';
 import { sounds } from '../utils/soundEffects';
 import RoleIcon from './RoleIcon';
 
@@ -60,7 +60,7 @@ export default function DiscussionPhase({
         background: 'rgba(255, 255, 255, 0.04)',
         padding: '10px 14px',
         borderRadius: 'var(--radius-md)',
-        marginBottom: '16px',
+        marginBottom: '12px',
         fontSize: '0.85rem'
       }}>
         <div>
@@ -68,6 +68,66 @@ export default function DiscussionPhase({
         </div>
         <div>
           Đã hy sinh: <strong style={{ color: '#ef4444' }}>{deadPlayers.length}</strong>
+        </div>
+      </div>
+
+      {/* Living Players Voice Activity Roster */}
+      <div style={{ marginBottom: '14px' }}>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px',
+          marginBottom: '8px',
+          fontSize: '0.78rem',
+          color: 'var(--text-muted)',
+          fontWeight: 600,
+          textTransform: 'uppercase',
+          letterSpacing: '0.5px'
+        }}>
+          🎙️ Hoạt động giọng nói
+        </div>
+        <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '8px', flexWrap: 'wrap' }}>
+          {alivePlayers.map(p => (
+            <div
+              key={p.id}
+              className={p.isSpeaking ? 'voice-roster-speaking' : ''}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '6px 12px',
+                borderRadius: '999px',
+                background: p.isSpeaking
+                  ? 'rgba(16, 185, 129, 0.25)'
+                  : 'rgba(255, 255, 255, 0.05)',
+                border: `1.5px solid ${p.isSpeaking ? '#10b981' : 'rgba(255, 255, 255, 0.1)'}`,
+                fontSize: '0.8rem',
+                whiteSpace: 'nowrap',
+                boxShadow: p.isSpeaking
+                  ? '0 0 14px rgba(16, 185, 129, 0.5), inset 0 0 8px rgba(16, 185, 129, 0.1)'
+                  : 'none',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                position: 'relative'
+              }}
+            >
+              <span style={{ fontSize: '1rem' }}>{p.avatar}</span>
+              <span style={{
+                fontWeight: p.isSpeaking ? 700 : 500,
+                color: p.isSpeaking ? '#6ee7b7' : '#e2e8f0'
+              }}>
+                {p.name}
+              </span>
+              {p.isSpeaking ? (
+                <div className="voice-wave-container" style={{ marginLeft: '2px' }}>
+                  <div className="wave-bar bar-1" />
+                  <div className="wave-bar bar-2" />
+                  <div className="wave-bar bar-3" />
+                </div>
+              ) : (
+                <MicOff size={12} style={{ color: 'rgba(255,255,255,0.25)' }} />
+              )}
+            </div>
+          ))}
         </div>
       </div>
 
