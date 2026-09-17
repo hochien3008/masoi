@@ -1,0 +1,351 @@
+import React, { useState, useEffect } from 'react';
+import { io } from 'socket.io-client';
+import { Volume2, VolumeX, LogOut, Copy, Check } from 'lucide-react';
+import { sounds } from './utils/soundEffects';
+
+import Home from './components/Home';
+import Lobby from './components/Lobby';
+import RoleReveal from './components/RoleReveal';
+import NightPhase from './components/NightPhase';
+import MorningPhase from './components/MorningPhase';
+import DiscussionPhase from './components/DiscussionPhase';
+import VotingPhase from './components/VotingPhase';
+import GameOverModal from './components/GameOverModal';
+import HunterShotModal from './components/HunterShotModal';
+
+// Initialize socket connection
+const socket = io('/', {
+  autoConnect: true,
+  reconnection: true
+});
+
+export default function App() {
+  const [gameState, setGameState] = useState(null);
+  const [chatMessages, setChatMessages] = useState([]);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [muted, setMuted] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  // Extract initial room code from URL params
+  const urlParams = new URLSearchParams(window.location.search);
+  const initialRoomCode = urlParams.get('room') || '';
+
+  useEffect(() => {
+    socket.on('connect', () => {
+      console.log('Connected to Nightfall socket server:', socket.id);
+      // Attempt reconnect if session stored
+      const savedCode = sessionStorage.getItem('nightfall_room_code');
+      const savedPlayerId = sessionStorage.getItem('nightfall_player_id');
+      if (savedCode && savedPlayerId) {
+        socket.emit('reconnect_room', { roomCode: savedCode, playerId: savedPlayerId });
+      }
+    });
+
+    socket.on('room_created', ({ roomCode, playerId }) => {
+      sessionStorage.setItem('nightfall_room_code', roomCode);
+      sessionStorage.setItem('nightfall_player_id', playerId);
+      window.history.replaceState({}, '', `?room=${roomCode}`);
+    });
+
+    socket.on('room_joined', ({ roomCode, playerId }) => {
+      sessionStorage.setItem('nightfall_room_code', roomCode);
+      sessionStorage.setItem('nightfall_player_id', playerId);
+      window.history.replaceState({}, '', `?room=${roomCode}`);
+    });
+
+    socket.on('game_state', (state) => {
+      setGameState(state);
+    });
+
+    socket.on('timer_tick', ({ timer }) => {
+      setGameState((prev) => (prev ? { ...prev, timer } : null));
+    });
+
+    socket.on('chat_message', (msg) => {
+      setChatMessages((prev) => [...prev, msg]);
+    });
+
+    socket.on('error_message', ({ message }) => {
+      setErrorMessage(message);
+      setTimeout(() => setErrorMessage(''), 4000);
+    });
+
+    return () => {
+      socket.off('connect');
+      socket.off('room_created');
+      socket.off('room_joined');
+      socket.off('game_state');
+      socket.off('timer_tick');
+      socket.off('chat_message');
+      socket.off('error_message');
+    };
+  }, []);
+
+  const handleToggleSound = () => {
+    const isMuted = sounds.toggleMute();
+    setMuted(isMuted);
+  };
+
+  const handleCreateRoom = (playerName) => {
+    socket.emit('create_room', { playerName });
+  };
+
+  const handleJoinRoom = (roomCode, playerName) => {
+    socket.emit('join_room', { roomCode, playerName });
+  };
+
+  const handleAddBot = () => {
+    if (!gameState) return;
+    socket.emit('add_bot', { roomCode: gameState.code });
+  };
+
+  const handleRemoveBot = (botId) => {
+    if (!gameState) return;
+    socket.emit('remove_bot', { roomCode: gameState.code, botId });
+  };
+
+  const handleStartGame = () => {
+    if (!gameState) return;
+    socket.emit('start_game', { roomCode: gameState.code });
+  };
+
+  const handleUpdateRoles = (selectedRoles) => {
+    if (!gameState) return;
+    socket.emit('update_roles', { roomCode: gameState.code, selectedRoles });
+  };
+
+  const handlePlayerReady = () => {
+    if (!gameState) return;
+    socket.emit('player_ready', { roomCode: gameState.code, playerId: gameState.myPlayerId });
+  };
+
+  const handleSubmitNightAction = (actionData) => {
+    if (!gameState) return;
+    socket.emit('night_action', {
+      roomCode: gameState.code,
+      playerId: gameState.myPlayerId,
+      targetId: typeof actionData === 'string' ? actionData : (actionData?.targetId || null),
+      actionData
+    });
+  };
+
+  const handleHunterShot = (targetId) => {
+    if (!gameState) return;
+    socket.emit('hunter_shot', {
+      roomCode: gameState.code,
+      hunterId: gameState.myPlayerId,
+      targetId
+    });
+  };
+
+  const handleSkipDiscussion = () => {
+    if (!gameState) return;
+    socket.emit('skip_discussion', { roomCode: gameState.code });
+  };
+
+  const handleSubmitVote = (targetId) => {
+    if (!gameState) return;
+    socket.emit('submit_vote', {
+      roomCode: gameState.code,
+      voterId: gameState.myPlayerId,
+      targetId
+    });
+  };
+
+  const handleSendMessage = (text, isGhost) => {
+    if (!gameState) return;
+    socket.emit('send_chat', {
+      roomCode: gameState.code,
+      playerId: gameState.myPlayerId,
+      text,
+      isGhost
+    });
+  };
+
+  const handlePlayAgain = () => {
+    if (!gameState) return;
+    socket.emit('play_again', { roomCode: gameState.code });
+  };
+
+  const handleLeaveRoom = () => {
+    sessionStorage.removeItem('nightfall_room_code');
+    sessionStorage.removeItem('nightfall_player_id');
+    window.history.replaceState({}, '', window.location.pathname);
+    window.location.reload();
+  };
+
+  const copyRoomCode = () => {
+    if (!gameState?.code) return;
+    navigator.clipboard.writeText(gameState.code);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const myPlayer = gameState?.players.find((p) => p.id === gameState.myPlayerId);
+
+  return (
+    <div className="nightfall-app">
+      {/* Top App Bar */}
+      <header className="top-bar">
+        <div className="brand">
+          🐺 NIGHT<span>FALL</span>
+        </div>
+
+        <div className="top-bar-actions">
+          {gameState && (
+            <div
+              className="room-badge"
+              onClick={copyRoomCode}
+              style={{ cursor: 'pointer' }}
+              title="Chạm để sao chép mã phòng"
+            >
+              <span>{gameState.code}</span>
+              {copied ? <Check size={14} color="#10b981" /> : <Copy size={14} />}
+            </div>
+          )}
+
+          <button
+            type="button"
+            className="btn-icon"
+            onClick={handleToggleSound}
+            title={muted ? 'Bật âm thanh' : 'Tắt âm thanh'}
+          >
+            {muted ? <VolumeX size={18} /> : <Volume2 size={18} />}
+          </button>
+
+          {gameState && (
+            <button
+              type="button"
+              className="btn-icon"
+              onClick={handleLeaveRoom}
+              title="Rời phòng"
+            >
+              <LogOut size={18} />
+            </button>
+          )}
+        </div>
+      </header>
+
+      {/* Global Toast Error Message */}
+      {errorMessage && (
+        <div style={{
+          background: 'rgba(239, 68, 68, 0.25)',
+          border: '1px solid rgba(239, 68, 68, 0.5)',
+          color: '#fca5a5',
+          padding: '12px 16px',
+          borderRadius: 'var(--radius-md)',
+          marginBottom: '16px',
+          fontSize: '0.9rem',
+          textAlign: 'center',
+          animation: 'fadeIn 0.3s ease'
+        }}>
+          ⚠️ {errorMessage}
+        </div>
+      )}
+
+      {/* Main Game Screen depending on phase */}
+      {!gameState && (
+        <Home
+          onCreate={handleCreateRoom}
+          onJoin={handleJoinRoom}
+          initialRoomCode={initialRoomCode}
+        />
+      )}
+
+      {gameState && gameState.phase === 'LOBBY' && (
+        <Lobby
+          roomCode={gameState.code}
+          players={gameState.players}
+          isHost={gameState.isHost}
+          myPlayerId={gameState.myPlayerId}
+          selectedSpecialRoles={gameState.selectedSpecialRoles}
+          onUpdateRoles={handleUpdateRoles}
+          onAddBot={handleAddBot}
+          onRemoveBot={handleRemoveBot}
+          onStartGame={handleStartGame}
+        />
+      )}
+
+      {gameState && gameState.phase === 'ROLE_REVEAL' && (
+        <RoleReveal
+          myRoleDetails={gameState.myRoleDetails}
+          myPlayer={myPlayer}
+          players={gameState.players}
+          timer={gameState.timer}
+          onReady={handlePlayerReady}
+        />
+      )}
+
+      {gameState && gameState.phase === 'NIGHT' && (
+        <NightPhase
+          dayNumber={gameState.dayNumber}
+          timer={gameState.timer}
+          myRole={gameState.myRole}
+          myRoleDetails={gameState.myRoleDetails}
+          isAlive={gameState.isAlive}
+          players={gameState.players}
+          myPlayerId={gameState.myPlayerId}
+          seerInspectionResult={gameState.seerInspectionResult}
+          witchInfo={gameState.witchInfo}
+          onSubmitNightAction={handleSubmitNightAction}
+        />
+      )}
+
+      {gameState && gameState.phase === 'MORNING' && (
+        <MorningPhase
+          nightReport={gameState.nightReport}
+          whisperReceived={gameState.whisperReceived}
+          haunted={gameState.haunted}
+          timer={gameState.timer}
+        />
+      )}
+
+      {/* Hunter Shot Revenge Phase Modal */}
+      {gameState && (gameState.phase === 'HUNTER_SHOT' || gameState.hunterReport) && (
+        <HunterShotModal
+          hunterData={gameState.hunterData}
+          hunterReport={gameState.hunterReport}
+          myPlayerId={gameState.myPlayerId}
+          players={gameState.players}
+          timer={gameState.timer}
+          onShoot={handleHunterShot}
+        />
+      )}
+
+      {gameState && gameState.phase === 'DISCUSSION' && (
+        <DiscussionPhase
+          dayNumber={gameState.dayNumber}
+          timer={gameState.timer}
+          players={gameState.players}
+          myPlayerId={gameState.myPlayerId}
+          isHost={gameState.isHost}
+          isAlive={gameState.isAlive}
+          chatMessages={chatMessages}
+          onSendMessage={handleSendMessage}
+          onSkipDiscussion={handleSkipDiscussion}
+        />
+      )}
+
+      {gameState && (gameState.phase === 'VOTING' || gameState.phase === 'VOTE_RESULT') && (
+        <VotingPhase
+          phase={gameState.phase}
+          timer={gameState.timer}
+          players={gameState.players}
+          myPlayerId={gameState.myPlayerId}
+          isAlive={gameState.isAlive}
+          voteResults={gameState.voteResults}
+          onSubmitVote={handleSubmitVote}
+        />
+      )}
+
+      {gameState && gameState.phase === 'GAME_OVER' && (
+        <GameOverModal
+          winner={gameState.winner}
+          players={gameState.players}
+          isHost={gameState.isHost}
+          onPlayAgain={handlePlayAgain}
+        />
+      )}
+    </div>
+  );
+}
