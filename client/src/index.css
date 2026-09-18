@@ -4,11 +4,12 @@
    ========================================================================== */
 
 :root {
+  /* Night/Default Theme Variables */
   --bg-main: #07090e;
-  --bg-card: rgba(18, 24, 38, 0.75);
-  --bg-card-hover: rgba(28, 36, 56, 0.85);
-  --border-subtle: rgba(255, 255, 255, 0.08);
-  --border-glow: rgba(168, 85, 247, 0.3);
+  --bg-card: rgba(18, 24, 38, 0.78);
+  --bg-card-hover: rgba(28, 36, 56, 0.88);
+  --border-subtle: rgba(255, 255, 255, 0.1);
+  --border-glow: rgba(168, 85, 247, 0.35);
 
   /* Team & Role Colors */
   --color-wolf: #ef4444;
@@ -35,8 +36,23 @@
   --radius-lg: 20px;
   --radius-full: 9999px;
 
-  --shadow-card: 0 10px 30px -5px rgba(0, 0, 0, 0.5), 0 0 20px -5px rgba(0, 0, 0, 0.3);
-  --glass-blur: blur(16px);
+  --shadow-card: 0 16px 36px -6px rgba(0, 0, 0, 0.6), 0 0 20px -4px rgba(0, 0, 0, 0.4);
+  --glass-blur: blur(18px);
+}
+
+/* Day Theme Variables */
+body.theme-day, .theme-day {
+  --bg-main: #e2e8f0;
+  --bg-card: rgba(255, 255, 255, 0.9);
+  --bg-card-hover: rgba(255, 255, 255, 0.98);
+  --border-subtle: rgba(15, 23, 42, 0.12);
+  --border-glow: rgba(245, 158, 11, 0.45);
+
+  --text-primary: #0f172a;
+  --text-secondary: #334155;
+  --text-muted: #64748b;
+
+  --shadow-card: 0 20px 45px -10px rgba(15, 23, 42, 0.18), 0 0 24px -2px rgba(245, 158, 11, 0.12);
 }
 
 * {
@@ -53,13 +69,47 @@ body {
   min-height: 100vh;
   min-height: 100dvh;
   overflow-x: hidden;
-  background: 
-    linear-gradient(180deg, rgba(7, 9, 14, 0.78) 0%, rgba(7, 9, 14, 0.88) 100%),
-    url('/images/nightfall_bg.jpg') no-repeat center center fixed;
-  background-size: cover;
+  transition: background-color 0.8s ease, color 0.4s ease;
 }
 
-/* Atmospheric Moonlight Backdrop */
+/* Atmospheric Dual-Layer Cross-fading Backdrop */
+.atmospheric-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: -10;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.backdrop-layer {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: opacity;
+}
+
+.backdrop-layer.night-layer {
+  background-image: 
+    linear-gradient(180deg, rgba(7, 9, 14, 0.72) 0%, rgba(7, 9, 14, 0.86) 100%),
+    url('/images/nightfall_bg.jpg');
+  opacity: 0;
+}
+
+.backdrop-layer.day-layer {
+  background-image: 
+    linear-gradient(180deg, rgba(255, 255, 255, 0.2) 0%, rgba(220, 235, 252, 0.45) 100%),
+    url('/images/daylight_bg.jpg');
+  opacity: 0;
+}
+
+.backdrop-layer.active {
+  opacity: 1;
+}
+
+/* Atmospheric Moonlight/Daylight Main Frame */
 .nightfall-app {
   min-height: 100vh;
   min-height: 100dvh;
@@ -69,6 +119,8 @@ body {
   max-width: 640px;
   margin: 0 auto;
   padding: 16px;
+  color: var(--text-primary);
+  transition: color 0.4s ease;
 }
 
 @media (min-width: 768px) {
@@ -94,17 +146,138 @@ body {
 .brand {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   font-family: var(--font-title);
-  font-size: 1.1rem;
-  font-weight: 800;
+  font-size: 1.15rem;
+  font-weight: 900;
   letter-spacing: 1.5px;
-  color: #fff;
-  text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+  color: var(--text-primary);
 }
 
-.brand span {
-  color: var(--color-wolf);
+.brand-text-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.part-wolf {
+  color: var(--text-primary);
+  font-weight: 900;
+  letter-spacing: 2px;
+}
+
+.part-hunt {
+  background: linear-gradient(135deg, #ff4d4d 0%, #dc2626 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 10px rgba(220, 38, 38, 0.45));
+  font-weight: 900;
+  letter-spacing: 2px;
+}
+
+.brand-mini-badge {
+  font-size: 0.6rem;
+  font-family: var(--font-body);
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: rgba(56, 189, 248, 0.15);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  color: #38bdf8;
+  margin-left: 4px;
+  text-transform: uppercase;
+}
+
+.theme-day .brand-mini-badge {
+  background: rgba(2, 132, 199, 0.12);
+  border-color: rgba(2, 132, 199, 0.35);
+  color: #0284c7;
+}
+
+/* WOLFHUNT Hero Brand (Home / Lobby) */
+.wolfhunt-hero-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+.wolfhunt-icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  margin-bottom: 8px;
+}
+
+.wolfhunt-title {
+  font-family: var(--font-title);
+  font-size: 2.8rem;
+  font-weight: 900;
+  letter-spacing: 4px;
+  line-height: 1.1;
+  margin: 6px 0 10px 0;
+}
+
+.wolfhunt-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 16px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 2px;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  color: #7dd3fc;
+  box-shadow: 0 0 18px rgba(56, 189, 248, 0.25);
+}
+
+.theme-day .wolfhunt-badge {
+  background: rgba(240, 249, 255, 0.95);
+  border-color: rgba(2, 132, 199, 0.4);
+  color: #0369a1;
+  box-shadow: 0 2px 10px rgba(2, 132, 199, 0.15);
+}
+
+.badge-glow-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #38bdf8;
+  box-shadow: 0 0 8px #38bdf8;
+  animation: pulse 1.2s infinite;
+}
+
+.wolfhunt-tagline {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  margin-top: 10px;
+  margin-bottom: 20px;
+}
+
+.wolfhunt-emblem-container {
+  box-shadow: 0 0 16px rgba(56, 189, 248, 0.45), 0 0 8px rgba(220, 38, 38, 0.4);
+  border: 1.5px solid rgba(56, 189, 248, 0.65);
+  background: #07090e;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.wolfhunt-emblem-container:hover {
+  transform: scale(1.06);
+  box-shadow: 0 0 24px rgba(56, 189, 248, 0.7), 0 0 12px rgba(220, 38, 38, 0.6);
+  border-color: #38bdf8;
+}
+
+.wolfhunt-emblem-container.is-hero {
+  border: 2.5px solid rgba(56, 189, 248, 0.8);
+  box-shadow: 0 0 35px rgba(56, 189, 248, 0.5), 0 0 16px rgba(220, 38, 38, 0.4);
 }
 
 .top-bar-actions {
@@ -157,6 +330,7 @@ body {
   box-shadow: var(--shadow-card);
   position: relative;
   overflow: hidden;
+  transition: background 1.2s ease, border-color 1.2s ease, box-shadow 1.2s ease;
 }
 
 /* Title Styles */
@@ -930,3 +1104,534 @@ h1, h2, h3, .heading-gothic {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
+
+/* ==========================================================================
+   DAY THEME VISUAL POLISH & CONTRAST REFINEMENT
+   ========================================================================== */
+
+.theme-day h1,
+.theme-day h2,
+.theme-day h3,
+.theme-day .heading-gothic {
+  color: #0f172a !important;
+  text-shadow: none !important;
+}
+
+.theme-day .top-bar {
+  background: rgba(255, 255, 255, 0.88);
+  border-color: rgba(15, 23, 42, 0.1);
+  box-shadow: 0 4px 18px rgba(15, 23, 42, 0.06);
+}
+
+.theme-day .brand {
+  color: #0f172a;
+  text-shadow: none;
+}
+
+.theme-day .room-badge {
+  background: rgba(0, 0, 0, 0.05);
+  border-color: rgba(15, 23, 42, 0.12);
+  color: #0f172a;
+}
+
+.theme-day .btn-icon {
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(15, 23, 42, 0.1);
+  color: #334155;
+}
+
+.theme-day .btn-icon:hover {
+  background: rgba(0, 0, 0, 0.08);
+  color: #0f172a;
+}
+
+.theme-day .tag-day {
+  background: rgba(254, 243, 199, 0.95);
+  color: #b45309;
+  border: 1.5px solid rgba(245, 158, 11, 0.4);
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.15);
+}
+
+.theme-day .timer-box {
+  background: rgba(254, 243, 199, 0.95);
+  color: #92400e;
+  border: 1.5px solid rgba(245, 158, 11, 0.45);
+  box-shadow: 0 2px 10px rgba(245, 158, 11, 0.15);
+}
+
+.theme-day .glass-panel {
+  background: var(--bg-card);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: var(--shadow-card);
+}
+
+/* Discussion Status Banner */
+.discussion-status-banner {
+  display: flex;
+  justify-content: space-around;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  margin-bottom: 12px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.theme-night .discussion-status-banner,
+:root .discussion-status-banner {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #94a3b8;
+}
+
+.theme-day .discussion-status-banner {
+  background: rgba(241, 245, 249, 0.95);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  color: #334155;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+}
+
+/* Roster Player Chip */
+.roster-player-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  white-space: nowrap;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.theme-night .roster-player-chip,
+:root .roster-player-chip {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1.5px solid rgba(255, 255, 255, 0.1);
+  color: #e2e8f0;
+}
+
+.theme-day .roster-player-chip {
+  background: rgba(255, 255, 255, 0.85);
+  border: 1.5px solid rgba(15, 23, 42, 0.12);
+  color: #1e293b;
+  font-weight: 600;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+
+.theme-day .roster-player-chip.is-speaking {
+  background: rgba(209, 250, 229, 0.95);
+  border-color: #10b981;
+  color: #047857;
+  box-shadow: 0 0 14px rgba(16, 185, 129, 0.35);
+}
+
+/* Chat Drawer Day Mode */
+.theme-day .chat-drawer {
+  background: rgba(248, 250, 252, 0.95);
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.theme-day .chat-messages {
+  color: #0f172a;
+}
+
+.theme-day .chat-bubble.mine {
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  color: #ffffff;
+  border: none;
+  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.25);
+}
+
+.theme-day .chat-bubble.other {
+  background: #ffffff;
+  color: #0f172a;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+
+.theme-day .chat-bubble.ghost {
+  background: rgba(226, 232, 240, 0.9);
+  color: #475569;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+}
+
+.theme-day .chat-sender {
+  color: #64748b;
+  font-weight: 600;
+}
+
+.chat-bubble.mine .chat-sender,
+.theme-day .chat-bubble.mine .chat-sender {
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+.theme-day .chat-input-row {
+  background: rgba(255, 255, 255, 0.95);
+  border-top: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.theme-day .chat-input {
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.15);
+  color: #0f172a;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.theme-day .chat-input::placeholder {
+  color: #94a3b8;
+}
+
+.quick-chip {
+  white-space: nowrap;
+  border-radius: var(--radius-full);
+  padding: 5px 12px;
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.theme-night .quick-chip,
+:root .quick-chip {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+}
+
+.theme-night .quick-chip:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+.theme-day .quick-chip {
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  color: #334155;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.theme-day .quick-chip:hover {
+  background: #ffffff;
+  color: #0f172a;
+  border-color: rgba(245, 158, 11, 0.5);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+/* Secondary Button in Day Mode */
+.theme-day .btn-secondary {
+  background: rgba(255, 255, 255, 0.85);
+  color: #1e293b;
+  border: 1px solid rgba(15, 23, 42, 0.15);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.theme-day .btn-secondary:hover {
+  background: #ffffff;
+  border-color: rgba(15, 23, 42, 0.25);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+/* Player List & Card in Day Mode */
+.theme-day .player-card {
+  background: rgba(255, 255, 255, 0.75);
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  color: #0f172a;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+}
+
+.theme-day .player-card:hover {
+  background: #ffffff;
+  border-color: rgba(245, 158, 11, 0.45);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+}
+
+.theme-day .player-name {
+  color: #0f172a;
+}
+
+/* Ghost Haunt & Whisper Alerts */
+.ghost-haunt-banner {
+  background: rgba(239, 68, 68, 0.12);
+  border: 1.5px solid #ef4444;
+  border-radius: var(--radius-md);
+  padding: 14px;
+  margin-top: 16px;
+  animation: pulse 1s infinite alternate;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+}
+
+.ghost-haunt-title {
+  font-size: 0.85rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #dc2626;
+}
+
+.theme-night .ghost-haunt-title {
+  color: #fca5a5;
+}
+
+.ghost-haunt-text {
+  font-size: 0.9rem;
+  font-style: italic;
+  margin-top: 2px;
+  color: #7f1d1d;
+}
+
+.theme-night .ghost-haunt-text {
+  color: #fecaca;
+}
+
+.ghost-whisper-banner {
+  background: rgba(241, 245, 249, 0.9);
+  border: 1.5px solid rgba(148, 163, 184, 0.4);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  margin-top: 16px;
+  animation: fadeIn 0.5s ease;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.theme-night .ghost-whisper-banner {
+  background: rgba(148, 163, 184, 0.15);
+  box-shadow: none;
+}
+
+.ghost-whisper-title {
+  font-size: 0.85rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #334155;
+}
+
+.theme-night .ghost-whisper-title {
+  color: #cbd5e1;
+}
+
+.ghost-whisper-text {
+  font-size: 0.9rem;
+  font-style: italic;
+  margin-top: 2px;
+  color: #0f172a;
+}
+
+.theme-night .ghost-whisper-text {
+  color: #e2e8f0;
+}
+
+.ghost-spectator-notice {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-radius: var(--radius-md);
+  font-size: 0.85rem;
+  margin-bottom: 16px;
+  background: rgba(241, 245, 249, 0.9);
+  border: 1px dashed rgba(148, 163, 184, 0.5);
+  color: #334155;
+}
+
+.theme-night .ghost-spectator-notice {
+  background: rgba(148, 163, 184, 0.1);
+  border: 1px dashed rgba(148, 163, 184, 0.3);
+  color: #cbd5e1;
+}
+
+/* Wolf Claw Slash & Screen Shake Effects */
+@keyframes clawSlashDown {
+  0% {
+    transform: translate(65px, -85px) scale(0.8) rotate(-4deg);
+    opacity: 0;
+    filter: drop-shadow(0 0 10px rgba(255, 0, 60, 0.5));
+  }
+  28% {
+    opacity: 1;
+    transform: translate(0px, 0px) scale(1.06) rotate(0deg);
+    filter: drop-shadow(0 0 35px rgba(255, 0, 60, 1)) drop-shadow(0 0 75px rgba(220, 38, 38, 0.95));
+  }
+  65% {
+    transform: translate(-8px, 10px) scale(1) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-14px, 18px) scale(1.02);
+    opacity: 0.9;
+  }
+}
+
+@keyframes screenShakeHeavy {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  10% { transform: translate(-12px, -9px) rotate(-1.5deg); }
+  20% { transform: translate(12px, 9px) rotate(1.5deg); }
+  30% { transform: translate(-9px, 7px) rotate(-1deg); }
+  40% { transform: translate(9px, -7px) rotate(1deg); }
+  50% { transform: translate(-7px, -4px) rotate(-0.5deg); }
+  60% { transform: translate(7px, 4px) rotate(0.5deg); }
+  70% { transform: translate(-4px, 2px) rotate(0deg); }
+  85% { transform: translate(2px, -2px); }
+}
+
+@keyframes bloodVignettePulse {
+  0% {
+    box-shadow: inset 0 0 70px rgba(239, 68, 68, 0.8), inset 0 0 140px rgba(185, 28, 28, 0.5);
+    background: radial-gradient(circle at center, transparent 30%, rgba(220, 38, 38, 0.35) 85%, rgba(153, 27, 27, 0.75) 100%);
+  }
+  100% {
+    box-shadow: inset 0 0 110px rgba(239, 68, 68, 1), inset 0 0 200px rgba(185, 28, 28, 0.8);
+    background: radial-gradient(circle at center, transparent 20%, rgba(220, 38, 38, 0.6) 80%, rgba(153, 27, 27, 0.92) 100%);
+  }
+}
+
+.wolf-slashed-screen {
+  animation: screenShakeHeavy 0.85s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+.blood-vignette-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  animation: bloodVignettePulse 0.4s ease-in-out infinite alternate;
+  z-index: 10;
+}
+
+/* Specialized Cinematic Event Vignettes */
+.poison-vignette-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;
+  box-shadow: inset 0 0 90px rgba(168, 85, 247, 0.75), inset 0 0 160px rgba(126, 34, 206, 0.5);
+  background: radial-gradient(circle at center, transparent 35%, rgba(147, 51, 234, 0.25) 80%, rgba(88, 28, 135, 0.7) 100%);
+  animation: auraBreath 1s ease-in-out infinite alternate;
+}
+
+.heal-vignette-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;
+  box-shadow: inset 0 0 85px rgba(6, 182, 212, 0.7), inset 0 0 150px rgba(13, 148, 136, 0.45);
+  background: radial-gradient(circle at center, transparent 35%, rgba(6, 182, 212, 0.2) 80%, rgba(15, 118, 110, 0.65) 100%);
+  animation: auraBreath 1.2s ease-in-out infinite alternate;
+}
+
+.witch-vignette-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;
+  box-shadow: inset 0 0 85px rgba(236, 72, 153, 0.7), inset 0 0 150px rgba(190, 24, 93, 0.45);
+  background: radial-gradient(circle at center, transparent 35%, rgba(236, 72, 153, 0.2) 80%, rgba(157, 23, 77, 0.65) 100%);
+  animation: auraBreath 1.2s ease-in-out infinite alternate;
+}
+
+.execution-vignette-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;
+  box-shadow: inset 0 0 100px rgba(0, 0, 0, 0.9), inset 0 0 180px rgba(185, 28, 28, 0.6);
+  background: radial-gradient(circle at center, transparent 25%, rgba(0, 0, 0, 0.7) 75%, rgba(127, 29, 29, 0.85) 100%);
+}
+
+.hunter-vignette-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;
+  box-shadow: inset 0 0 90px rgba(245, 158, 11, 0.75), inset 0 0 160px rgba(180, 83, 9, 0.5);
+  background: radial-gradient(circle at center, transparent 35%, rgba(245, 158, 11, 0.25) 80%, rgba(120, 53, 15, 0.7) 100%);
+  animation: auraBreath 0.9s ease-in-out infinite alternate;
+}
+
+@keyframes auraBreath {
+  0% { opacity: 0.75; transform: scale(1); }
+  100% { opacity: 1; transform: scale(1.02); }
+}
+
+@keyframes hexSpinSlow {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes nooseSwing {
+  0% { transform: rotate(-8deg); }
+  50% { transform: rotate(8deg); }
+  100% { transform: rotate(-8deg); }
+}
+
+@keyframes crosshairLockAnim {
+  0% { transform: scale(1.8) rotate(45deg); opacity: 0; }
+  40% { transform: scale(0.95) rotate(0deg); opacity: 1; }
+  60% { transform: scale(1.05) rotate(0deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+@keyframes divineShieldPop {
+  0% { transform: scale(0.4); opacity: 0; filter: drop-shadow(0 0 5px #06b6d4); }
+  45% { transform: scale(1.15); opacity: 1; filter: drop-shadow(0 0 40px #06b6d4) drop-shadow(0 0 70px #0891b2); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes potionBrewShake {
+  0%, 100% { transform: rotate(0deg) scale(1); }
+  25% { transform: rotate(-6deg) scale(1.04); }
+  75% { transform: rotate(6deg) scale(1.04); }
+}
+
+@keyframes wolfMawSnap {
+  0% { transform: scale(0.5); opacity: 0; }
+  40% { transform: scale(1.2) rotate(-3deg); opacity: 1; filter: drop-shadow(0 0 40px #ef4444); }
+  70% { transform: scale(0.98); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* Cinematic Day/Night Transition Animations */
+@keyframes sunrayRotate {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes sunDiscRise {
+  0% { transform: translateY(50px) scale(0.7); opacity: 0; filter: drop-shadow(0 0 20px #f59e0b); }
+  40% { transform: translateY(0) scale(1.08); opacity: 1; filter: drop-shadow(0 0 60px #f59e0b) drop-shadow(0 0 100px #fef08a); }
+  100% { transform: translateY(0) scale(1); opacity: 1; filter: drop-shadow(0 0 45px #f59e0b); }
+}
+
+@keyframes moonRiseAndGlow {
+  0% { transform: translateY(50px) scale(0.7); opacity: 0; filter: drop-shadow(0 0 20px #8b5cf6); }
+  40% { transform: translateY(0) scale(1.08); opacity: 1; filter: drop-shadow(0 0 60px #a855f7) drop-shadow(0 0 100px #c084fc); }
+  100% { transform: translateY(0) scale(1); opacity: 1; filter: drop-shadow(0 0 45px #a855f7); }
+}
+
+@keyframes cloudDriftSlow {
+  0% { transform: translateX(-30px); opacity: 0.4; }
+  50% { transform: translateX(30px); opacity: 0.7; }
+  100% { transform: translateX(-30px); opacity: 0.4; }
+}
+
+@keyframes starTwinkleGlow {
+  0%, 100% { opacity: 0.3; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.2); }
+}
+
+@keyframes solarFlarePulse {
+  0%, 100% { transform: scale(1); opacity: 0.8; }
+  50% { transform: scale(1.15); opacity: 1; }
+}
+
+
+
+

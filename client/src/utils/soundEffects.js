@@ -1,8 +1,8 @@
-// Web Audio API Sound Effects Synthesizer for Nightfall
 class SoundManager {
   constructor() {
     this.ctx = null;
     this.muted = false;
+    this.activeNodes = new Set();
   }
 
   init() {
@@ -17,8 +17,32 @@ class SoundManager {
     }
   }
 
+  trackNode(node) {
+    if (!node) return node;
+    this.activeNodes.add(node);
+    const prevOnEnded = node.onended;
+    node.onended = (ev) => {
+      this.activeNodes.delete(node);
+      if (prevOnEnded) prevOnEnded(ev);
+    };
+    return node;
+  }
+
+  stopAll() {
+    this.activeNodes.forEach((node) => {
+      try {
+        if (node.stop) node.stop();
+        if (node.disconnect) node.disconnect();
+      } catch (e) {}
+    });
+    this.activeNodes.clear();
+  }
+
   toggleMute() {
     this.muted = !this.muted;
+    if (this.muted) {
+      this.stopAll();
+    }
     return this.muted;
   }
 
@@ -29,31 +53,115 @@ class SoundManager {
 
     try {
       const now = this.ctx.currentTime;
-      const osc = this.ctx.createOscillator();
-      const gain = this.ctx.createGain();
 
-      osc.type = 'sawtooth';
-      // Howl pitch sweep: low -> high -> prolonged glide -> taper
-      osc.frequency.setValueAtTime(220, now);
-      osc.frequency.exponentialRampToValueAtTime(440, now + 0.5);
-      osc.frequency.exponentialRampToValueAtTime(520, now + 1.2);
-      osc.frequency.exponentialRampToValueAtTime(280, now + 2.8);
+      // 1. Deep Guttural Throat Rumble (The predator awakening)
+      const rumbleOsc = this.ctx.createOscillator();
+      const rumbleGain = this.ctx.createGain();
+      rumbleOsc.type = 'triangle';
+      rumbleOsc.frequency.setValueAtTime(85, now);
+      rumbleOsc.frequency.exponentialRampToValueAtTime(140, now + 0.5);
+      rumbleOsc.frequency.exponentialRampToValueAtTime(60, now + 2.2);
+      rumbleGain.gain.setValueAtTime(0.01, now);
+      rumbleGain.gain.linearRampToValueAtTime(0.22, now + 0.3);
+      rumbleGain.gain.exponentialRampToValueAtTime(0.001, now + 2.4);
 
-      gain.gain.setValueAtTime(0.01, now);
-      gain.gain.linearRampToValueAtTime(0.15, now + 0.6);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 3.0);
+      // 2. Main Piercing Wolf Vocal Chords (Dual detuned saw/sine oscillators)
+      const osc1 = this.ctx.createOscillator();
+      const osc2 = this.ctx.createOscillator();
+      const mainGain = this.ctx.createGain();
 
-      // Filter for eerie wolf throat warmth
+      osc1.type = 'sawtooth';
+      osc2.type = 'sine';
+
+      // Pitch sweep: Low throat growl (140Hz) -> Menacing Rise (490Hz) -> Prolonged mournful howl -> Eerie descent
+      osc1.frequency.setValueAtTime(140, now);
+      osc1.frequency.exponentialRampToValueAtTime(320, now + 0.4);
+      osc1.frequency.exponentialRampToValueAtTime(490, now + 1.1);
+      osc1.frequency.linearRampToValueAtTime(460, now + 2.0);
+      osc1.frequency.exponentialRampToValueAtTime(180, now + 3.4);
+
+      osc2.frequency.setValueAtTime(142, now);
+      osc2.frequency.exponentialRampToValueAtTime(324, now + 0.4);
+      osc2.frequency.exponentialRampToValueAtTime(495, now + 1.1);
+      osc2.frequency.linearRampToValueAtTime(464, now + 2.0);
+      osc2.frequency.exponentialRampToValueAtTime(182, now + 3.4);
+
+      // Eerie vibrato LFO (5.2Hz waver)
+      const lfo = this.ctx.createOscillator();
+      const lfoGain = this.ctx.createGain();
+      lfo.frequency.setValueAtTime(5.2, now);
+      lfoGain.gain.setValueAtTime(0, now);
+      lfoGain.gain.linearRampToValueAtTime(12, now + 0.8);
+      lfoGain.gain.linearRampToValueAtTime(4, now + 2.8);
+      lfo.connect(osc1.frequency);
+      lfo.connect(osc2.frequency);
+      lfo.start(now);
+      lfo.stop(now + 3.5);
+
+      // Formant Bandpass Filter (Simulating wolf vocal tract acoustic resonance)
       const filter = this.ctx.createBiquadFilter();
-      filter.type = 'lowpass';
-      filter.frequency.setValueAtTime(800, now);
+      filter.type = 'bandpass';
+      filter.Q.setValueAtTime(3.2, now);
+      filter.frequency.setValueAtTime(350, now);
+      filter.frequency.exponentialRampToValueAtTime(820, now + 1.0);
+      filter.frequency.exponentialRampToValueAtTime(400, now + 3.2);
 
-      osc.connect(filter);
-      filter.connect(gain);
-      gain.connect(this.ctx.destination);
+      // Lowpass filter for natural acoustic body
+      const darkFilter = this.ctx.createBiquadFilter();
+      darkFilter.type = 'lowpass';
+      darkFilter.frequency.setValueAtTime(1600, now);
 
-      osc.start(now);
-      osc.stop(now + 3.0);
+      mainGain.gain.setValueAtTime(0.01, now);
+      mainGain.gain.linearRampToValueAtTime(0.35, now + 0.7);
+      mainGain.gain.setValueAtTime(0.3, now + 1.8);
+      mainGain.gain.exponentialRampToValueAtTime(0.001, now + 3.5);
+
+      osc1.connect(filter);
+      osc2.connect(filter);
+      filter.connect(darkFilter);
+      darkFilter.connect(mainGain);
+      mainGain.connect(this.ctx.destination);
+
+      rumbleOsc.connect(rumbleGain);
+      rumbleGain.connect(this.ctx.destination);
+
+      // 3. Icy mountain wind breath behind the howl
+      const bufferSize = this.ctx.sampleRate * 2.5;
+      const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = (Math.random() * 2 - 1) * 0.08;
+      }
+      const noise = this.ctx.createBufferSource();
+      noise.buffer = buffer;
+      const noiseFilter = this.ctx.createBiquadFilter();
+      noiseFilter.type = 'bandpass';
+      noiseFilter.frequency.setValueAtTime(400, now);
+      noiseFilter.frequency.linearRampToValueAtTime(700, now + 1.2);
+      const noiseGain = this.ctx.createGain();
+      noiseGain.gain.setValueAtTime(0.01, now);
+      noiseGain.gain.linearRampToValueAtTime(0.08, now + 0.6);
+      noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 2.5);
+      noise.connect(noiseFilter);
+      noiseFilter.connect(noiseGain);
+      noiseGain.connect(this.ctx.destination);
+
+      this.trackNode(noise);
+      this.trackNode(rumbleOsc);
+      this.trackNode(osc1);
+      this.trackNode(osc2);
+      this.trackNode(lfo);
+
+      noise.start(now);
+      noise.stop(now + 2.2);
+
+      rumbleOsc.start(now);
+      rumbleOsc.stop(now + 2.0);
+
+      osc1.start(now);
+      osc2.start(now);
+      osc1.stop(now + 2.5);
+      osc2.stop(now + 2.5);
     } catch (e) {
       console.warn('Audio error:', e);
     }
@@ -316,6 +424,51 @@ class SoundManager {
 
       osc.start(now);
       osc.stop(now + 1.5);
+    } catch (e) {
+      console.warn('Audio error:', e);
+    }
+  }
+
+  playShield() {
+    if (this.muted) return;
+    this.init();
+    if (!this.ctx) return;
+    try {
+      const now = this.ctx.currentTime;
+      [587.33, 880, 1174.66, 1760].forEach((freq, idx) => {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, now + idx * 0.04);
+        gain.gain.setValueAtTime(0.12, now + idx * 0.04);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.04 + 1.2);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now + idx * 0.04);
+        osc.stop(now + idx * 0.04 + 1.3);
+      });
+    } catch (e) {
+      console.warn('Audio error:', e);
+    }
+  }
+
+  playBite() {
+    if (this.muted) return;
+    this.init();
+    if (!this.ctx) return;
+    try {
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(140, now);
+      osc.frequency.exponentialRampToValueAtTime(35, now + 0.18);
+      gain.gain.setValueAtTime(0.35, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.25);
     } catch (e) {
       console.warn('Audio error:', e);
     }

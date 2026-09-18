@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Shield, Sparkles, Moon, Users, HelpCircle } from 'lucide-react';
 import { sounds } from '../utils/soundEffects';
 import RoleIcon from './RoleIcon';
+import Logo from './Logo';
 
 export default function Home({ onJoin, onCreate, initialRoomCode }) {
   const [name, setName] = useState(() => localStorage.getItem('nightfall_player_name') || '');
@@ -44,16 +45,7 @@ export default function Home({ onJoin, onCreate, initialRoomCode }) {
 
   return (
     <div className="glass-panel" style={{ textAlign: 'center', marginTop: 'auto', marginBottom: 'auto' }}>
-      <div className="floating" style={{ fontSize: '4.5rem', marginBottom: '12px' }}>
-        🐺
-      </div>
-
-      <h1 style={{ fontSize: '2.4rem', fontWeight: 900, marginBottom: '4px', letterSpacing: '3px' }}>
-        NIGHTFALL
-      </h1>
-      <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', marginBottom: '24px' }}>
-        Ma Sói Trực Tuyến • Tự Động Quản Trò • Không Cần Tải App
-      </p>
+      <Logo variant="hero" size={90} showTagline={true} />
 
       {error && (
         <div style={{

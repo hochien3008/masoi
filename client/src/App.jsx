@@ -13,6 +13,10 @@ import VotingPhase from './components/VotingPhase';
 import GameOverModal from './components/GameOverModal';
 import HunterShotModal from './components/HunterShotModal';
 import VoiceBar from './components/VoiceBar';
+import PhaseTransition from './components/PhaseTransition';
+import GameEventOverlay from './components/GameEventOverlay';
+import RoomSettingsModal from './components/RoomSettingsModal';
+import Logo from './components/Logo';
 import { webrtcManager } from './utils/webrtcManager';
 
 // Initialize socket connection
@@ -25,13 +29,20 @@ export default function App() {
   const [gameState, setGameState] = useState(null);
   const [chatMessages, setChatMessages] = useState([]);
   const [errorMessage, setErrorMessage] = useState('');
-  const [muted, setMuted] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [muted, setMuted] = useState(false);
+  const [initialRoomCode, setInitialRoomCode] = useState(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get('room') || '';
+  });
+  const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const [peerVoiceStatuses, setPeerVoiceStatuses] = useState({});
 
-  // Extract initial room code from URL params
-  const urlParams = new URLSearchParams(window.location.search);
-  const initialRoomCode = urlParams.get('room') || '';
+  // Theme & Animation States
+  const [activeEvent, setActiveEvent] = useState(null);
+  const [pendingEvent, setPendingEvent] = useState(null);
+  const [transitioningPhase, setTransitioningPhase] = useState(null);
+  const [prevPhase, setPrevPhase] = useState(null);
 
   useEffect(() => {
     socket.on('connect', () => {
@@ -57,7 +68,63 @@ export default function App() {
     });
 
     socket.on('game_state', (state) => {
-      setGameState(state);
+      setGameState((prevState) => {
+        let isPrevNight = false;
+        let isNextNight = false;
+        let isPrevDay = false;
+        let isNextDay = false;
+
+        if (prevState && prevState.phase !== state.phase) {
+          // Detect Day/Night transitions
+          isPrevNight = ['NIGHT', 'ROLE_REVEAL'].includes(prevState.phase);
+          isNextNight = ['NIGHT', 'ROLE_REVEAL'].includes(state.phase);
+          isPrevDay = ['MORNING', 'DISCUSSION', 'VOTING', 'VOTE_RESULT'].includes(prevState.phase);
+          isNextDay = ['MORNING', 'DISCUSSION', 'VOTING', 'VOTE_RESULT'].includes(state.phase);
+          
+          if (isPrevNight && isNextDay) {
+            setTransitioningPhase('DAY');
+          } else if (isPrevDay && isNextNight) {
+            setTransitioningPhase('NIGHT');
+          }
+        }
+        
+        // Detect Game Events
+        if (prevState) {
+          // Vote Eliminated
+          if (state.phase === 'VOTE_RESULT' && state.voteResults?.eliminatedId && 
+              prevState.phase !== 'VOTE_RESULT') {
+            const isSelf = state.voteResults.eliminatedId === state.myPlayerId;
+            setActiveEvent({ type: 'VOTE_ELIMINATED', isSelf });
+          }
+          // Night Report Events
+          if (state.phase === 'MORNING' && prevState.phase !== 'MORNING' && state.nightReport) {
+            let evt = null;
+            if (!state.nightReport.survived) {
+              const isSelf = state.nightReport.victims?.some(v => v.id === state.myPlayerId);
+              evt = { type: 'WOLF_KILL', isSelf };
+            } else if (state.nightReport.healed) {
+              evt = { type: 'HEAL' };
+            } else if (state.nightReport.witchSaved) {
+              evt = { type: 'WITCH_SAVE' };
+            }
+
+            if (evt) {
+              if (isPrevNight && isNextDay) {
+                // Queue event until Day/Dawn transition completes so it displays fully!
+                setPendingEvent(evt);
+              } else {
+                setActiveEvent(evt);
+              }
+            }
+          }
+          // Hunter Shot
+          if (state.phase === 'HUNTER_SHOT' && state.hunterReport && !prevState.hunterReport) {
+             setActiveEvent({ type: 'HUNTER_SHOT' });
+          }
+        }
+
+        return state;
+      });
     });
 
     socket.on('timer_tick', ({ timer }) => {
@@ -66,6 +133,23 @@ export default function App() {
 
     socket.on('chat_message', (msg) => {
       setChatMessages((prev) => [...prev, msg]);
+    });
+
+    socket.on('wolf_pack_update', ({ wolfPackData, wolfChatMessages }) => {
+      setGameState((prev) => (prev ? { ...prev, wolfPackData, wolfChatMessages } : null));
+    });
+
+    socket.on('wolf_chat_message', (msg) => {
+      setGameState((prev) => {
+        if (!prev) return prev;
+        const exists = prev.wolfChatMessages?.some((m) => m.id === msg.id);
+        if (exists) return prev;
+        return {
+          ...prev,
+          wolfChatMessages: [...(prev.wolfChatMessages || []), msg]
+        };
+      });
+      sounds.playCardFlip();
     });
 
     socket.on('error_message', ({ message }) => {
@@ -80,6 +164,8 @@ export default function App() {
       socket.off('game_state');
       socket.off('timer_tick');
       socket.off('chat_message');
+      socket.off('wolf_pack_update');
+      socket.off('wolf_chat_message');
       socket.off('error_message');
     };
   }, []);
@@ -133,6 +219,11 @@ export default function App() {
   const handleUpdateRoles = (selectedRoles) => {
     if (!gameState) return;
     socket.emit('update_roles', { roomCode: gameState.code, selectedRoles });
+  };
+
+  const handleUpdateSettings = (settings) => {
+    if (!gameState) return;
+    socket.emit('update_settings', { roomCode: gameState.code, settings });
   };
 
   const handlePlayerReady = () => {
@@ -212,13 +303,56 @@ export default function App() {
 
   const myPlayer = enrichedPlayers.find((p) => p.id === gameState?.myPlayerId);
 
+  // Determine theme class
+  let themeClass = 'theme-twilight';
+  if (gameState) {
+    if (['NIGHT', 'ROLE_REVEAL'].includes(gameState.phase)) {
+      themeClass = 'theme-night';
+    } else if (['MORNING', 'DISCUSSION', 'VOTING', 'VOTE_RESULT', 'HUNTER_SHOT'].includes(gameState.phase)) {
+      themeClass = 'theme-day';
+    }
+  }
+
+  // Synchronize theme class to body for global CSS variables and cascade
+  useEffect(() => {
+    document.body.className = themeClass;
+  }, [themeClass]);
+
+  const isDayTheme = themeClass === 'theme-day';
+
   return (
-    <div className="nightfall-app">
+    <>
+      {/* Fullscreen Atmospheric Dual-Layer Backdrop */}
+      <div className="atmospheric-backdrop">
+        <div className={`backdrop-layer night-layer ${!isDayTheme ? 'active' : ''}`} />
+        <div className={`backdrop-layer day-layer ${isDayTheme ? 'active' : ''}`} />
+      </div>
+
+      <div className={`nightfall-app ${themeClass}`}>
+        {/* Overlays */}
+        {transitioningPhase && (
+          <PhaseTransition 
+            targetPhase={transitioningPhase} 
+            onComplete={() => {
+              setTransitioningPhase(null);
+              if (pendingEvent) {
+                setActiveEvent(pendingEvent);
+                setPendingEvent(null);
+              }
+            }} 
+          />
+        )}
+      
+      {activeEvent && (
+        <GameEventOverlay 
+          event={activeEvent} 
+          onComplete={() => setActiveEvent(null)} 
+        />
+      )}
+
       {/* Top App Bar */}
       <header className="top-bar">
-        <div className="brand">
-          🐺 NIGHT<span>FALL</span>
-        </div>
+        <Logo variant="compact" size={30} />
 
         <div className="top-bar-actions">
           {gameState && (
@@ -298,11 +432,16 @@ export default function App() {
           players={enrichedPlayers}
           isHost={gameState.isHost}
           myPlayerId={gameState.myPlayerId}
+          settings={gameState.settings}
           selectedSpecialRoles={gameState.selectedSpecialRoles}
+          onUpdateSettings={handleUpdateSettings}
           onUpdateRoles={handleUpdateRoles}
           onAddBot={handleAddBot}
           onRemoveBot={handleRemoveBot}
           onStartGame={handleStartGame}
+          onOpenSettings={() => setSettingsModalOpen(true)}
+          onTriggerEvent={(evt) => setActiveEvent(evt)}
+          onTriggerTransition={(phase) => setTransitioningPhase(phase)}
         />
       )}
 
@@ -327,6 +466,22 @@ export default function App() {
           myPlayerId={gameState.myPlayerId}
           seerInspectionResult={gameState.seerInspectionResult}
           witchInfo={gameState.witchInfo}
+          wolfPackData={gameState.wolfPackData}
+          wolfChatMessages={gameState.wolfChatMessages}
+          onWolfSelectTarget={(targetId) => {
+            socket.emit('wolf_select_target', {
+              roomCode: gameState.code,
+              wolfId: gameState.myPlayerId,
+              targetId
+            });
+          }}
+          onSendWolfChat={(text) => {
+            socket.emit('send_wolf_chat', {
+              roomCode: gameState.code,
+              wolfId: gameState.myPlayerId,
+              text
+            });
+          }}
           onSubmitNightAction={handleSubmitNightAction}
         />
       )}
@@ -386,6 +541,22 @@ export default function App() {
           onPlayAgain={handlePlayAgain}
         />
       )}
+
+      {/* Global Room Settings & Visual Effects Tester Modal */}
+      {gameState && (
+        <RoomSettingsModal
+          isOpen={settingsModalOpen}
+          onClose={() => setSettingsModalOpen(false)}
+          isHost={gameState.isHost}
+          playerCount={gameState.players?.length || 0}
+          settings={gameState.settings}
+          selectedSpecialRoles={gameState.selectedSpecialRoles}
+          onSaveSettings={handleUpdateSettings}
+          onTriggerEvent={(evt) => setActiveEvent(evt)}
+          onTriggerTransition={(phase) => setTransitioningPhase(phase)}
+        />
+      )}
     </div>
+    </>
   );
 }

@@ -44,9 +44,25 @@ export class Room {
     this.chatMessages = [];
     this.io = null;
     this.selectedSpecialRoles = ['SEER', 'DOCTOR'];
+    this.settings = {
+      discussionTime: 90,
+      votingTime: 30,
+      allowGhostChat: true
+    };
 
     // Add host as first player
     this.addPlayer(hostSocketId, hostName, true);
+  }
+
+  updateSettings(newSettings) {
+    if (this.phase !== 'LOBBY') return;
+    if (newSettings && typeof newSettings === 'object') {
+      if (newSettings.discussionTime) this.settings.discussionTime = Math.max(30, Math.min(300, Number(newSettings.discussionTime)));
+      if (newSettings.votingTime) this.settings.votingTime = Math.max(15, Math.min(120, Number(newSettings.votingTime)));
+      if (typeof newSettings.allowGhostChat === 'boolean') this.settings.allowGhostChat = newSettings.allowGhostChat;
+      if (Array.isArray(newSettings.selectedSpecialRoles)) this.selectedSpecialRoles = newSettings.selectedSpecialRoles;
+      this.broadcastState();
+    }
   }
 
   updateSelectedRoles(roles) {
@@ -206,8 +222,10 @@ export class Room {
 
   startNight() {
     this.phase = 'NIGHT';
+    this.wolfChatMessages = [];
     this.players.forEach(p => {
       p.nightAction = null;
+      p.tentativeWolfTarget = null;
       p.whisperReceived = null;
       p.haunted = false;
       p.hauntVotes = 0;
@@ -225,29 +243,122 @@ export class Room {
 
   getPendingWolfTarget() {
     const wolves = this.players.filter(p => p.isAlive && p.role === 'WEREWOLF');
+    if (wolves.length === 0) return null;
+
     const wolfVotes = {};
     wolves.forEach(w => {
-      if (w.nightAction) {
-        wolfVotes[w.nightAction] = (wolfVotes[w.nightAction] || 0) + 1;
+      const targetId = w.nightAction || w.tentativeWolfTarget;
+      if (targetId) {
+        wolfVotes[targetId] = (wolfVotes[targetId] || 0) + 1;
       }
     });
 
     let maxVotes = 0;
     let targetId = null;
+    let isTied = false;
+
     for (const [tId, count] of Object.entries(wolfVotes)) {
       if (count > maxVotes) {
         maxVotes = count;
         targetId = tId;
+        isTied = false;
+      } else if (count === maxVotes) {
+        isTied = true;
       }
     }
 
     if (targetId) {
       const target = this.players.find(p => p.id === targetId && p.isAlive);
       if (target) {
-        return { id: target.id, name: target.name };
+        return {
+          id: target.id,
+          name: target.name,
+          votes: maxVotes,
+          totalWolves: wolves.length,
+          isUnanimous: maxVotes === wolves.length && wolves.length > 1,
+          isTied
+        };
       }
     }
     return null;
+  }
+
+  getWolfPackData() {
+    const wolves = this.players.filter(p => p.isAlive && p.role === 'WEREWOLF');
+    const packTargets = {};
+    const voteCounts = {};
+
+    wolves.forEach(w => {
+      const targetId = w.nightAction || w.tentativeWolfTarget || null;
+      packTargets[w.id] = {
+        wolfId: w.id,
+        wolfName: w.name,
+        avatar: w.avatar,
+        targetId: targetId,
+        isConfirmed: Boolean(w.nightAction)
+      };
+      if (targetId) {
+        voteCounts[targetId] = (voteCounts[targetId] || 0) + 1;
+      }
+    });
+
+    const pendingVictim = this.getPendingWolfTarget();
+
+    return {
+      wolves: packTargets,
+      voteCounts,
+      totalWolves: wolves.length,
+      pendingVictim
+    };
+  }
+
+  handleWolfSelectTarget(wolfId, targetId) {
+    if (this.phase !== 'NIGHT') return;
+    const wolf = this.players.find(p => p.id === wolfId && p.isAlive && p.role === 'WEREWOLF');
+    if (!wolf) return;
+
+    wolf.tentativeWolfTarget = targetId;
+    this.broadcastWolfPackUpdate();
+  }
+
+  handleSendWolfChat(wolfId, text) {
+    if (this.phase !== 'NIGHT') return;
+    const wolf = this.players.find(p => p.id === wolfId && p.isAlive && p.role === 'WEREWOLF');
+    if (!wolf || !text || !text.trim()) return;
+
+    if (!this.wolfChatMessages) this.wolfChatMessages = [];
+
+    const msg = {
+      id: 'wchat_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+      senderId: wolf.id,
+      senderName: wolf.name,
+      avatar: wolf.avatar,
+      text: text.trim().slice(0, 150),
+      time: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
+    };
+
+    this.wolfChatMessages.push(msg);
+
+    const aliveWolves = this.players.filter(p => p.isAlive && p.role === 'WEREWOLF' && p.socketId);
+    aliveWolves.forEach(w => {
+      if (this.io) {
+        this.io.to(w.socketId).emit('wolf_chat_message', msg);
+      }
+    });
+
+    this.broadcastWolfPackUpdate();
+  }
+
+  broadcastWolfPackUpdate() {
+    if (!this.io) return;
+    const packData = this.getWolfPackData();
+    const aliveWolves = this.players.filter(p => p.isAlive && p.role === 'WEREWOLF' && p.socketId);
+    aliveWolves.forEach(w => {
+      this.io.to(w.socketId).emit('wolf_pack_update', {
+        wolfPackData: packData,
+        wolfChatMessages: this.wolfChatMessages || []
+      });
+    });
   }
 
   submitNightAction(playerId, actionPayload) {
@@ -258,6 +369,11 @@ export class Room {
     if (player.isAlive) {
       if (player.role === 'WEREWOLF' || player.role === 'DOCTOR' || player.role === 'SEER') {
         player.nightAction = typeof actionPayload === 'object' ? actionPayload?.targetId : actionPayload;
+
+        if (player.role === 'WEREWOLF') {
+          player.tentativeWolfTarget = player.nightAction;
+          this.broadcastWolfPackUpdate();
+        }
 
         if (player.role === 'SEER' && player.nightAction) {
           const target = this.players.find(p => p.id === player.nightAction);
@@ -285,19 +401,16 @@ export class Room {
   }
 
   checkNightActionCompletion() {
-    // Active living roles who must act
-    const activeAliveRoles = this.players.filter(p => {
-      if (!p.isAlive) return false;
-      if (p.role === 'WEREWOLF' || p.role === 'DOCTOR' || p.role === 'SEER') return true;
-      if (p.role === 'WITCH') {
-        return (p.witchPotions?.save || p.witchPotions?.poison);
-      }
-      return false;
-    });
+    const aliveActionRoles = this.players.filter(p =>
+      p.isAlive && (p.role === 'WEREWOLF' || p.role === 'DOCTOR' || p.role === 'SEER' || p.role === 'WITCH')
+    );
+    const ghosts = this.players.filter(p => !p.isAlive);
 
-    const allActiveDone = activeAliveRoles.every(p => p.nightAction !== null);
+    // Living roles MUST submit. Ghosts are optional.
+    const allLivingActed = aliveActionRoles.every(p => p.nightAction !== null);
+    const allGhostsActed = ghosts.length === 0 || ghosts.every(p => p.nightAction !== null);
 
-    if (allActiveDone) {
+    if (allLivingActed && allGhostsActed) {
       // Small delay for natural suspense
       setTimeout(() => {
         if (this.phase === 'NIGHT') {
@@ -322,8 +435,17 @@ export class Room {
           if (bot.role === 'WEREWOLF') {
             const targets = aliveNonWolves.length > 0 ? aliveNonWolves : alivePlayers.filter(p => p.id !== bot.id);
             if (targets.length > 0) {
-              const target = targets[Math.floor(Math.random() * targets.length)];
+              const otherWolf = this.players.find(p => p.isAlive && p.role === 'WEREWOLF' && p.id !== bot.id && (p.nightAction || p.tentativeWolfTarget));
+              let target;
+              if (otherWolf && Math.random() < 0.75) {
+                const targetId = otherWolf.nightAction || otherWolf.tentativeWolfTarget;
+                target = targets.find(t => t.id === targetId) || targets[Math.floor(Math.random() * targets.length)];
+              } else {
+                target = targets[Math.floor(Math.random() * targets.length)];
+              }
+              bot.tentativeWolfTarget = target.id;
               bot.nightAction = target.id;
+              this.broadcastWolfPackUpdate();
             }
           } else if (bot.role === 'DOCTOR') {
             const target = alivePlayers[Math.floor(Math.random() * alivePlayers.length)];
@@ -489,8 +611,8 @@ export class Room {
       return;
     }
 
-    // Show Morning bulletin for 8 seconds, then Discussion
-    this.startTimer(8, () => {
+    // Show Morning bulletin for 10 seconds, then Discussion
+    this.startTimer(10, () => {
       this.startDiscussion();
     });
 
@@ -499,8 +621,8 @@ export class Room {
 
   startDiscussion() {
     this.phase = 'DISCUSSION';
-    // 90 seconds discussion timer (Host can skip early)
-    this.startTimer(90, () => {
+    const discTime = this.settings?.discussionTime || 90;
+    this.startTimer(discTime, () => {
       this.startVoting();
     });
 
@@ -541,8 +663,8 @@ export class Room {
       p.vote = null;
     });
 
-    // 40 seconds voting timer
-    this.startTimer(40, () => {
+    const voteTime = this.settings?.votingTime || 30;
+    this.startTimer(voteTime, () => {
       this.resolveVoting();
     });
 
@@ -946,7 +1068,10 @@ export class Room {
           canPoison: Boolean(player.witchPotions?.poison),
           wolfVictim: this.getPendingWolfTarget()
         } : null,
-        selectedSpecialRoles: this.selectedSpecialRoles || ['SEER', 'DOCTOR']
+        selectedSpecialRoles: this.selectedSpecialRoles || ['SEER', 'DOCTOR'],
+        settings: this.settings || { discussionTime: 90, votingTime: 30, allowGhostChat: true },
+        wolfPackData: (player.role === 'WEREWOLF' && this.phase === 'NIGHT') ? this.getWolfPackData() : null,
+        wolfChatMessages: (player.role === 'WEREWOLF' && this.phase === 'NIGHT') ? (this.wolfChatMessages || []) : []
       };
 
       if (player.socketId) {

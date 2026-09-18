@@ -32,45 +32,42 @@ export default function MorningPhase({ nightReport, whisperReceived, haunted, ti
         padding: '24px',
         borderRadius: 'var(--radius-lg)',
         background: survived ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.15)',
-        border: `1px solid ${survived ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.4)'}`
+        border: `1px solid ${survived ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.4)'}`,
+        boxShadow: survived ? '0 0 20px rgba(16, 185, 129, 0.2)' : '0 0 30px rgba(239, 68, 68, 0.3)',
+        animation: 'fadeIn 0.8s ease-out'
       }}>
-        <div style={{ fontSize: '4.5rem', marginBottom: '12px' }}>
+        <div style={{ 
+          fontSize: '5rem', 
+          marginBottom: '16px',
+          animation: survived ? 'floatSlow 3s ease-in-out infinite' : 'pulse 1.5s ease-in-out infinite',
+          filter: survived ? 'drop-shadow(0 0 15px rgba(16, 185, 129, 0.5))' : 'drop-shadow(0 0 15px rgba(239, 68, 68, 0.8))'
+        }}>
           {survived ? '🛡️' : '💀'}
         </div>
 
         <h3 style={{
           fontSize: '1.4rem',
-          color: survived ? '#6ee7b7' : '#fca5a5',
-          marginBottom: '8px'
+          color: survived ? '#10b981' : '#ef4444',
+          marginBottom: '8px',
+          fontWeight: 800
         }}>
           {survived ? 'MỘT ĐÊM BÌNH YÊN' : 'TANG TÓC TRONG ĐÊM'}
         </h3>
 
-        <p style={{ fontSize: '1.05rem', lineHeight: '1.6', color: '#f8fafc' }}>
+        <p style={{ fontSize: '1.05rem', lineHeight: '1.6', color: 'var(--text-primary)', fontWeight: 500 }}>
           {nightReport?.message || 'Mọi người thức giấc sau một đêm dài...'}
         </p>
       </div>
 
       {/* Ghost Whisper / Haunt Alert */}
       {haunted && (
-        <div style={{
-          background: 'rgba(239, 68, 68, 0.2)',
-          border: '1px solid #ef4444',
-          borderRadius: 'var(--radius-md)',
-          padding: '14px',
-          marginTop: '16px',
-          animation: 'pulse 1s infinite alternate',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-          textAlign: 'left'
-        }}>
+        <div className="ghost-haunt-banner">
           <span style={{ fontSize: '2rem' }}>🕯️</span>
           <div>
-            <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#fca5a5', textTransform: 'uppercase', letterSpacing: '1px' }}>
+            <div className="ghost-haunt-title">
               Ảo Giác Ám Ảnh (Ghost Haunt)
             </div>
-            <div style={{ fontSize: '0.9rem', color: '#fecaca', fontStyle: 'italic', marginTop: '2px' }}>
+            <div className="ghost-haunt-text">
               {whisperReceived || 'Một linh hồn ma quái đã ám bạn đêm qua! Đầu óc bạn quay cuồng giữa những ảo ảnh...'}
             </div>
           </div>
@@ -78,24 +75,13 @@ export default function MorningPhase({ nightReport, whisperReceived, haunted, ti
       )}
 
       {!haunted && whisperReceived && (
-        <div style={{
-          background: 'rgba(148, 163, 184, 0.15)',
-          border: '1px solid rgba(148, 163, 184, 0.4)',
-          borderRadius: 'var(--radius-md)',
-          padding: '14px',
-          marginTop: '16px',
-          animation: 'fadeIn 0.5s ease',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-          textAlign: 'left'
-        }}>
+        <div className="ghost-whisper-banner">
           <RoleIcon roleId="GHOST" size={42} />
           <div>
-            <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#cbd5e1', textTransform: 'uppercase', letterSpacing: '1px' }}>
+            <div className="ghost-whisper-title">
               Điềm Báo Từ Cõi Chết (Ghost Whisper)
             </div>
-            <div style={{ fontSize: '0.9rem', color: '#e2e8f0', fontStyle: 'italic', marginTop: '2px' }}>
+            <div className="ghost-whisper-text">
               {whisperReceived}
             </div>
           </div>

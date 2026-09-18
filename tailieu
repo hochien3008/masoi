@@ -1,0 +1,147 @@
+1. Concept sản phẩm
+Tên tạm: Nightfall / Wolf Room / Moonlie.
+Đây là social deduction game cho 4–8 người, chơi trực tiếp trên browser.
+Không cần tải app:
+Một người Create Room → gửi link → mọi người mở trên iPhone/Android/PC → nhập tên → chơi.
+Một trận mục tiêu khoảng 8–15 phút.
+Điểm khác Ma Sói truyền thống:
+Game tự làm quản trò + người chết vẫn tiếp tục chơi.
+Vì vậy nhóm bạn không cần một người hy sinh làm moderator.
+2. Gameplay V1
+Ban đầu chỉ cần 4 role:
+Role	Phe	Khả năng
+🐺 Werewolf	Sói	Mỗi đêm chọn một người tấn công
+🔮 Seer	Dân	Mỗi đêm kiểm tra một người
+💊 Doctor	Dân	Mỗi đêm bảo vệ một người
+👨 Villager	Dân	Không có skill
+👻 Ghost	—	Trạng thái sau khi chết
+Ví dụ 6 người:
+1 Wolf + 1 Seer + 1 Doctor + 3 Villager.
+Sau này mới thêm Hunter, Witch, Alpha Wolf, Fool, Guard...
+3. Flow một trận
+Lobby
+Host tạo phòng:
+ROOM: X7KD
+Bạn bè có thể nhập code hoặc mở trực tiếp:
+game.com/room/X7KD
+Lobby hiển thị:
+🐺 NIGHTFALL
+
+Room X7KD
+
+✓ Nam
+✓ Huy
+✓ Linh
+✓ An
+✓ Minh
+✓ Long
+
+        [ START GAME ]
+Chỉ Host được Start.
+Phát role
+Server random role.
+Mỗi người chỉ nhận role của chính mình.
+Ví dụ điện thoại của Nam:
+YOUR ROLE
+
+🐺 WEREWOLF
+
+Eliminate the village
+without being discovered.
+
+[ I'M READY ]
+Server biết tất cả role.
+Client không được biết role người khác.
+🌙 Night
+Mọi người thực hiện action bí mật.
+Wolf:
+Choose someone to attack
+
+○ Huy
+○ Linh
+○ An
+○ Minh
+Doctor:
+Choose someone to protect
+Seer:
+Choose someone to investigate
+Villager:
+🌙 The village is sleeping...
+
+Waiting for the night to end.
+Server chờ tất cả action hoặc hết timer.
+Sau đó resolve:
+Wolf attacks Huy
+Doctor protects Huy
+
+→ Huy survives
+Nhưng không nói cho mọi người Doctor đã cứu ai.
+☀️ Day
+Server công bố:
+☀️ MORNING
+
+Someone was attacked last night...
+
+But nobody died.
+Hoặc:
+☀️ MORNING
+
+💀 Huy was killed.
+Sau đó timer:
+Discussion: 02:00
+Mọi người nói chuyện ngoài đời/Discord/voice call.
+MVP không cần voice chat.
+Đây là một quyết định scope rất quan trọng.
+🗳 Vote
+Hết discussion:
+Who do you suspect?
+
+○ Nam
+○ Linh
+○ An
+○ Minh
+
+[ VOTE ]
+Server tổng hợp.
+Nam     ███ 3
+Linh    ██  2
+
+Nam has been eliminated.
+Reveal role hay không có thể trở thành Room Setting sau này. V1 mình sẽ reveal role để luật dễ hiểu.
+4. Người chết không bị out
+Đây là feature mình muốn dùng để differentiate.
+Người chết trở thành:
+👻 Ghost
+Ghost không được vote và không được tiết lộ thông tin trực tiếp.
+Nhưng mỗi đêm có thể làm một action rất nhẹ.
+Ví dụ V1:
+Whisper
+Chọn một player còn sống:
+👻 → Linh
+Sáng hôm sau Linh nhận:
+“You felt a presence watching you last night.”
+Ban đầu Ghost mechanic có thể rất đơn giản. Sau này mới phát triển thành:
+Haunt
+Dream
+Protect
+Reveal clue
+Disturb Wolf
+Possess
+Như vậy chết không đồng nghĩa:
+“Thôi tao đi TikTok, tụi mày chơi tiếp đi.”
+5. Điều kiện thắng
+Village thắng: tất cả Werewolf chết.
+Wolf thắng: số Wolf ≥ số Village còn sống.
+Game → Result:
+🐺 WEREWOLVES WIN
+
+Nam — Werewolf
+Linh — Seer
+Huy — Doctor
+An — Villager
+Minh — Villager
+
+[ PLAY AGAIN ]
+Play Again giữ nguyên lobby → shuffle role → trận mới.
+Cực kỳ quan trọng cho party game vì giảm downtime.
+6. Công nghệ

@@ -13,10 +13,16 @@ export default function NightPhase({
   myPlayerId,
   seerInspectionResult,
   witchInfo,
+  wolfPackData,
+  wolfChatMessages = [],
+  onWolfSelectTarget,
+  onSendWolfChat,
   onSubmitNightAction
 }) {
   const [selectedTarget, setSelectedTarget] = useState(null);
   const [submitted, setSubmitted] = useState(false);
+  const [wolfChatInput, setWolfChatInput] = useState('');
+  const [wolfChatOpen, setWolfChatOpen] = useState(true);
 
   // Witch specific states
   const [witchSave, setWitchSave] = useState(false);
@@ -371,9 +377,58 @@ export default function NightPhase({
       {/* Target Selection for Living Action Roles & Ghost */}
       {!isSleepingRole && !isWitch && (
         <>
+          {/* Werewolf Pack Coordination Banner */}
+          {myRole === 'WEREWOLF' && wolfPackData && (
+            <div style={{
+              background: wolfPackData.pendingVictim?.isUnanimous
+                ? 'linear-gradient(90deg, rgba(239, 68, 68, 0.25), rgba(185, 28, 28, 0.35))'
+                : (wolfPackData.pendingVictim?.isTied
+                  ? 'rgba(245, 158, 11, 0.18)'
+                  : 'rgba(239, 68, 68, 0.12)'),
+              border: `1px solid ${wolfPackData.pendingVictim?.isUnanimous ? '#ef4444' : (wolfPackData.pendingVictim?.isTied ? '#f59e0b' : 'rgba(239, 68, 68, 0.35)')}`,
+              borderRadius: 'var(--radius-md)',
+              padding: '10px 14px',
+              marginBottom: '14px',
+              textAlign: 'left',
+              boxShadow: wolfPackData.pendingVictim?.isUnanimous ? '0 0 20px rgba(239, 68, 68, 0.25)' : 'none'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '1.2rem' }}>
+                    {wolfPackData.pendingVictim?.isUnanimous ? '🔥' : (wolfPackData.pendingVictim?.isTied ? '⚠️' : '🐺')}
+                  </span>
+                  <div>
+                    <div style={{
+                      fontSize: '0.85rem',
+                      fontWeight: 800,
+                      color: wolfPackData.pendingVictim?.isUnanimous ? '#fca5a5' : (wolfPackData.pendingVictim?.isTied ? '#fcd34d' : '#f87171')
+                    }}>
+                      {wolfPackData.pendingVictim?.isUnanimous
+                        ? `ĐỒNG THUẬN HOÀN HẢO (${wolfPackData.pendingVictim.votes}/${wolfPackData.totalWolves} SÓI)`
+                        : (wolfPackData.pendingVictim?.isTied
+                          ? `BẦY SÓI ĐANG CHIA RẼ (${wolfPackData.totalWolves} SÓI)`
+                          : `MỤC TIÊU SĂN MỒI (${wolfPackData.pendingVictim ? `${wolfPackData.pendingVictim.votes}/${wolfPackData.totalWolves} phiếu` : 'Đang chọn'})`)}
+                    </div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                      {wolfPackData.pendingVictim
+                        ? (wolfPackData.pendingVictim.isTied
+                            ? 'Mỗi con sói đang chọn 1 người khác nhau! Hãy thống nhất cắn cùng 1 người.'
+                            : `Nạn nhân dự kiến: ${wolfPackData.pendingVictim.name}`)
+                        : 'Chạm vào người chơi để chỉ điểm cho đồng đội cùng thấy!'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="player-list">
             {selectablePlayers.map(p => {
               const isSelected = selectedTarget === p.id;
+              const fellowWolvesTargeting = (myRole === 'WEREWOLF' && wolfPackData?.wolves)
+                ? Object.values(wolfPackData.wolves).filter(w => w.wolfId !== myPlayerId && w.targetId === p.id)
+                : [];
+
               return (
                 <div
                   key={p.id}
@@ -382,10 +437,18 @@ export default function NightPhase({
                     if (!submitted) {
                       sounds.playCardFlip();
                       setSelectedTarget(p.id);
+                      if (myRole === 'WEREWOLF' && onWolfSelectTarget) {
+                        onWolfSelectTarget(p.id);
+                      }
                     }
                   }}
                   style={{
-                    borderColor: isSelected ? 'var(--color-seer)' : undefined
+                    borderColor: isSelected
+                      ? (myRole === 'WEREWOLF' ? '#ef4444' : 'var(--color-seer)')
+                      : (fellowWolvesTargeting.length > 0 ? 'rgba(239, 68, 68, 0.7)' : undefined),
+                    boxShadow: fellowWolvesTargeting.length > 0
+                      ? '0 0 15px rgba(239, 68, 68, 0.35)'
+                      : (isSelected && myRole === 'WEREWOLF' ? '0 0 15px rgba(239, 68, 68, 0.25)' : undefined)
                   }}
                 >
                   <div className="player-info">
@@ -398,21 +461,42 @@ export default function NightPhase({
                     </div>
                   </div>
 
-                  {isSelected && (
-                    <span style={{
-                      background: 'var(--color-seer)',
-                      color: 'white',
-                      padding: '4px 8px',
-                      borderRadius: '4px',
-                      fontSize: '0.75rem',
-                      fontWeight: 700,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '4px'
-                    }}>
-                      <Check size={12} /> ĐÃ CHỌN
-                    </span>
-                  )}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    {fellowWolvesTargeting.length > 0 && (
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        background: 'rgba(239, 68, 68, 0.22)',
+                        border: '1px solid rgba(239, 68, 68, 0.55)',
+                        padding: '3px 8px',
+                        borderRadius: '999px',
+                        fontSize: '0.72rem',
+                        color: '#fca5a5',
+                        fontWeight: 700,
+                        animation: 'pulse 1.8s infinite'
+                      }}>
+                        <span>🐺</span>
+                        <span>{fellowWolvesTargeting.map(w => w.wolfName).join(', ')}</span>
+                      </div>
+                    )}
+
+                    {isSelected && (
+                      <span style={{
+                        background: myRole === 'WEREWOLF' ? '#ef4444' : 'var(--color-seer)',
+                        color: 'white',
+                        padding: '4px 8px',
+                        borderRadius: '4px',
+                        fontSize: '0.75rem',
+                        fontWeight: 700,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}>
+                        <Check size={12} /> ĐÃ CHỌN
+                      </span>
+                    )}
+                  </div>
                 </div>
               );
             })}
@@ -425,9 +509,9 @@ export default function NightPhase({
               disabled={!selectedTarget || submitted}
               onClick={handleConfirmAction}
               style={{
-                background: submitted ? 'rgba(16, 185, 129, 0.2)' : undefined,
-                border: submitted ? '1px solid #10b981' : undefined,
-                boxShadow: submitted ? 'none' : undefined,
+                background: submitted ? 'rgba(16, 185, 129, 0.2)' : (myRole === 'WEREWOLF' ? '#ef4444' : undefined),
+                border: submitted ? '1px solid #10b981' : (myRole === 'WEREWOLF' ? '1px solid #dc2626' : undefined),
+                boxShadow: submitted ? 'none' : (myRole === 'WEREWOLF' ? '0 0 20px rgba(239, 68, 68, 0.4)' : undefined),
                 color: submitted ? '#6ee7b7' : '#fff'
               }}
             >
@@ -450,6 +534,184 @@ export default function NightPhase({
               </p>
             )}
           </div>
+
+          {/* Werewolf Pack Secret Chat Drawer */}
+          {myRole === 'WEREWOLF' && (
+            <div style={{
+              marginTop: '20px',
+              background: 'rgba(15, 12, 19, 0.85)',
+              border: '1px solid rgba(239, 68, 68, 0.35)',
+              borderRadius: 'var(--radius-lg)',
+              overflow: 'hidden',
+              boxShadow: '0 8px 30px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(239, 68, 68, 0.05)'
+            }}>
+              {/* Wolf Chat Header */}
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '10px 14px',
+                  background: 'rgba(239, 68, 68, 0.15)',
+                  borderBottom: '1px solid rgba(239, 68, 68, 0.25)',
+                  cursor: 'pointer'
+                }}
+                onClick={() => setWolfChatOpen(!wolfChatOpen)}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '1.1rem' }}>🐺</span>
+                  <strong style={{ fontSize: '0.85rem', color: '#fca5a5', letterSpacing: '0.5px' }}>
+                    KÊNH MẬT BẦY SÓI ({wolfPackData?.totalWolves || 1} Sói)
+                  </strong>
+                </div>
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                  {wolfChatOpen ? 'Thu gọn ▲' : 'Mở rộng ▼'}
+                </span>
+              </div>
+
+              {wolfChatOpen && (
+                <div style={{ padding: '12px' }}>
+                  {/* Quick Tactical Chips */}
+                  <div style={{
+                    display: 'flex',
+                    gap: '6px',
+                    overflowX: 'auto',
+                    paddingBottom: '8px',
+                    marginBottom: '8px'
+                  }}>
+                    {[
+                      '🩸 Cắn người này đi!',
+                      '🤫 Cẩn thận Bác Sĩ cứu!',
+                      '🔮 Mai tôi giả Tiên Tri!',
+                      '🤝 Cùng dồn phiếu nào!'
+                    ].map((chip, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        style={{
+                          whiteSpace: 'nowrap',
+                          padding: '4px 10px',
+                          fontSize: '0.72rem',
+                          borderRadius: '999px',
+                          background: 'rgba(239, 68, 68, 0.12)',
+                          border: '1px solid rgba(239, 68, 68, 0.3)',
+                          color: '#fecaca',
+                          cursor: 'pointer'
+                        }}
+                        onClick={() => {
+                          if (onSendWolfChat) onSendWolfChat(chip);
+                        }}
+                      >
+                        {chip}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Message List */}
+                  <div style={{
+                    height: '110px',
+                    overflowY: 'auto',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '6px',
+                    padding: '6px',
+                    background: 'rgba(0, 0, 0, 0.35)',
+                    borderRadius: 'var(--radius-sm)',
+                    marginBottom: '8px',
+                    textAlign: 'left'
+                  }}>
+                    {(!wolfChatMessages || wolfChatMessages.length === 0) ? (
+                      <div style={{ margin: 'auto', color: 'var(--text-muted)', fontSize: '0.75rem', fontStyle: 'italic' }}>
+                        Chưa có tin nhắn nào. Bàn kế hoạch cùng bầy đàn tại đây...
+                      </div>
+                    ) : (
+                      wolfChatMessages.map(msg => {
+                        const isMine = msg.senderId === myPlayerId;
+                        return (
+                          <div
+                            key={msg.id}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'flex-start',
+                              gap: '6px',
+                              alignSelf: isMine ? 'flex-end' : 'flex-start',
+                              maxWidth: '85%'
+                            }}
+                          >
+                            {!isMine && (
+                              <span style={{ fontSize: '1rem' }}>{msg.avatar || '🐺'}</span>
+                            )}
+                            <div style={{
+                              background: isMine ? 'rgba(239, 68, 68, 0.35)' : 'rgba(255, 255, 255, 0.08)',
+                              border: `1px solid ${isMine ? '#ef4444' : 'rgba(255, 255, 255, 0.15)'}`,
+                              padding: '5px 9px',
+                              borderRadius: '8px',
+                              fontSize: '0.8rem',
+                              color: '#f8fafc'
+                            }}>
+                              {!isMine && (
+                                <div style={{ fontSize: '0.68rem', color: '#fca5a5', fontWeight: 700, marginBottom: '2px' }}>
+                                  {msg.senderName}
+                                </div>
+                              )}
+                              <div>{msg.text}</div>
+                              <div style={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.4)', textAlign: 'right', marginTop: '2px' }}>
+                                {msg.time}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+
+                  {/* Chat Input */}
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      if (wolfChatInput.trim() && onSendWolfChat) {
+                        onSendWolfChat(wolfChatInput.trim());
+                        setWolfChatInput('');
+                      }
+                    }}
+                    style={{ display: 'flex', gap: '6px' }}
+                  >
+                    <input
+                      type="text"
+                      placeholder="Gửi tin nhắn bí mật cho bầy sói..."
+                      value={wolfChatInput}
+                      onChange={(e) => setWolfChatInput(e.target.value)}
+                      style={{
+                        flex: 1,
+                        padding: '7px 12px',
+                        borderRadius: '6px',
+                        border: '1px solid rgba(239, 68, 68, 0.4)',
+                        background: 'rgba(0, 0, 0, 0.4)',
+                        color: '#fff',
+                        fontSize: '0.82rem',
+                        outline: 'none'
+                      }}
+                    />
+                    <button
+                      type="submit"
+                      style={{
+                        padding: '7px 14px',
+                        borderRadius: '6px',
+                        background: '#ef4444',
+                        border: 'none',
+                        color: '#fff',
+                        fontWeight: 700,
+                        fontSize: '0.8rem',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Gửi
+                    </button>
+                  </form>
+                </div>
+              )}
+            </div>
+          )}
         </>
       )}
     </div>

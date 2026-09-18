@@ -67,8 +67,8 @@ export default function VotingPhase({
 
             return (
               <div key={p.id} style={{
-                background: isEliminated ? 'rgba(239, 68, 68, 0.16)' : 'rgba(255, 255, 255, 0.04)',
-                border: isEliminated ? '1px solid rgba(239, 68, 68, 0.5)' : '1px solid rgba(255, 255, 255, 0.06)',
+                background: isEliminated ? 'rgba(239, 68, 68, 0.16)' : 'rgba(0, 0, 0, 0.03)',
+                border: isEliminated ? '1.5px solid rgba(239, 68, 68, 0.5)' : '1px solid var(--border-subtle)',
                 boxShadow: isEliminated ? '0 0 16px rgba(239, 68, 68, 0.25)' : 'none',
                 borderRadius: '8px',
                 padding: '10px 12px',
@@ -78,7 +78,7 @@ export default function VotingPhase({
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.85rem', marginBottom: '6px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                     <span>{p.avatar}</span>
-                    <span style={{ fontWeight: isEliminated ? 800 : 500, color: isEliminated ? '#fca5a5' : '#fff' }}>
+                    <span style={{ fontWeight: isEliminated ? 800 : 600, color: isEliminated ? '#ef4444' : 'var(--text-primary)' }}>
                       {p.name}
                     </span>
                     {isEliminated && (
@@ -106,7 +106,7 @@ export default function VotingPhase({
                         ✨ -{voteResults.ghostModifiers[p.id].shield} Khiên
                       </span>
                     )}
-                    <span style={{ fontWeight: 800, fontSize: '0.95rem', color: isEliminated ? '#ef4444' : '#fff' }}>
+                    <span style={{ fontWeight: 800, fontSize: '0.95rem', color: isEliminated ? '#ef4444' : 'var(--text-primary)' }}>
                       {votes} phiếu
                     </span>
                   </div>
@@ -127,14 +127,16 @@ export default function VotingPhase({
 
           {/* Skip vote tally */}
           <div style={{
-            background: 'rgba(255, 255, 255, 0.04)',
+            background: 'rgba(0, 0, 0, 0.03)',
+            border: '1px solid var(--border-subtle)',
             borderRadius: '8px',
             padding: '8px 12px',
-            textAlign: 'left'
+            textAlign: 'left',
+            color: 'var(--text-secondary)'
           }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '4px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
               <span>⚪ Bỏ phiếu trắng (Không treo cổ)</span>
-              <span style={{ fontWeight: 700 }}>{voteResults?.skipCount || 0} phiếu</span>
+              <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{voteResults?.skipCount || 0} phiếu</span>
             </div>
           </div>
         </div>
@@ -143,14 +145,18 @@ export default function VotingPhase({
         <div style={{
           padding: '16px',
           borderRadius: 'var(--radius-md)',
-          background: voteResults?.eliminatedId ? 'rgba(239, 68, 68, 0.2)' : 'rgba(16, 185, 129, 0.15)',
-          border: `1px solid ${voteResults?.eliminatedId ? 'rgba(239, 68, 68, 0.4)' : 'rgba(16, 185, 129, 0.3)'}`,
+          background: voteResults?.eliminatedId ? 'rgba(239, 68, 68, 0.15)' : 'rgba(16, 185, 129, 0.15)',
+          border: `1.5px solid ${voteResults?.eliminatedId ? '#ef4444' : '#10b981'}`,
           marginTop: '16px'
         }}>
           <div style={{ fontSize: '2.5rem', marginBottom: '6px' }}>
             {voteResults?.eliminatedId ? '⚖️' : '🕊️'}
           </div>
-          <div style={{ fontSize: '1.05rem', fontWeight: 700, color: '#f8fafc' }}>
+          <div style={{
+            fontSize: '1.05rem',
+            fontWeight: 800,
+            color: voteResults?.eliminatedId ? '#dc2626' : '#059669'
+          }}>
             {voteResults?.message}
           </div>
         </div>

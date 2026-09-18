@@ -153,6 +153,13 @@ io.on('connection', (socket) => {
     room.updateSelectedRoles(selectedRoles);
   });
 
+  socket.on('update_settings', ({ roomCode, settings }) => {
+    const room = rooms.get(roomCode);
+    if (!room) return;
+    if (socket.id !== room.hostSocketId) return;
+    room.updateSettings(settings);
+  });
+
   socket.on('start_game', ({ roomCode }) => {
     const room = rooms.get(roomCode);
     if (!room) return;
@@ -174,6 +181,18 @@ io.on('connection', (socket) => {
     const room = rooms.get(roomCode);
     if (!room) return;
     room.submitNightAction(playerId, actionData !== undefined ? actionData : targetId);
+  });
+
+  socket.on('wolf_select_target', ({ roomCode, wolfId, targetId }) => {
+    const room = rooms.get(roomCode);
+    if (!room) return;
+    room.handleWolfSelectTarget(wolfId, targetId);
+  });
+
+  socket.on('send_wolf_chat', ({ roomCode, wolfId, text }) => {
+    const room = rooms.get(roomCode);
+    if (!room) return;
+    room.handleSendWolfChat(wolfId, text);
   });
 
   socket.on('hunter_shot', ({ roomCode, hunterId, targetId }) => {

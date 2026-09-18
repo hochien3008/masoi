@@ -54,15 +54,7 @@ export default function DiscussionPhase({
       </div>
 
       {/* Alive Status Counter */}
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-around',
-        background: 'rgba(255, 255, 255, 0.04)',
-        padding: '10px 14px',
-        borderRadius: 'var(--radius-md)',
-        marginBottom: '12px',
-        fontSize: '0.85rem'
-      }}>
+      <div className="discussion-status-banner">
         <div>
           Còn sống: <strong style={{ color: '#10b981' }}>{alivePlayers.length}</strong>
         </div>
@@ -80,7 +72,7 @@ export default function DiscussionPhase({
           marginBottom: '8px',
           fontSize: '0.78rem',
           color: 'var(--text-muted)',
-          fontWeight: 600,
+          fontWeight: 700,
           textTransform: 'uppercase',
           letterSpacing: '0.5px'
         }}>
@@ -90,31 +82,10 @@ export default function DiscussionPhase({
           {alivePlayers.map(p => (
             <div
               key={p.id}
-              className={p.isSpeaking ? 'voice-roster-speaking' : ''}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                padding: '6px 12px',
-                borderRadius: '999px',
-                background: p.isSpeaking
-                  ? 'rgba(16, 185, 129, 0.25)'
-                  : 'rgba(255, 255, 255, 0.05)',
-                border: `1.5px solid ${p.isSpeaking ? '#10b981' : 'rgba(255, 255, 255, 0.1)'}`,
-                fontSize: '0.8rem',
-                whiteSpace: 'nowrap',
-                boxShadow: p.isSpeaking
-                  ? '0 0 14px rgba(16, 185, 129, 0.5), inset 0 0 8px rgba(16, 185, 129, 0.1)'
-                  : 'none',
-                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                position: 'relative'
-              }}
+              className={`roster-player-chip ${p.isSpeaking ? 'is-speaking voice-roster-speaking' : ''}`}
             >
               <span style={{ fontSize: '1rem' }}>{p.avatar}</span>
-              <span style={{
-                fontWeight: p.isSpeaking ? 700 : 500,
-                color: p.isSpeaking ? '#6ee7b7' : '#e2e8f0'
-              }}>
+              <span style={{ fontWeight: p.isSpeaking ? 700 : 600 }}>
                 {p.name}
               </span>
               {p.isSpeaking ? (
@@ -124,7 +95,7 @@ export default function DiscussionPhase({
                   <div className="wave-bar bar-3" />
                 </div>
               ) : (
-                <MicOff size={12} style={{ color: 'rgba(255,255,255,0.25)' }} />
+                <MicOff size={12} style={{ opacity: 0.4 }} />
               )}
             </div>
           ))}
@@ -162,17 +133,8 @@ export default function DiscussionPhase({
             <button
               key={idx}
               type="button"
+              className="quick-chip"
               onClick={() => handleQuickPhrase(phrase)}
-              style={{
-                whiteSpace: 'nowrap',
-                background: 'rgba(255, 255, 255, 0.05)',
-                border: '1px solid var(--border-subtle)',
-                color: 'var(--text-secondary)',
-                borderRadius: 'var(--radius-full)',
-                padding: '4px 10px',
-                fontSize: '0.75rem',
-                cursor: 'pointer'
-              }}
             >
               {phrase}
             </button>
@@ -196,19 +158,7 @@ export default function DiscussionPhase({
           </button>
         </form>
       ) : (
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: '10px',
-          padding: '12px 16px',
-          background: 'rgba(148, 163, 184, 0.1)',
-          border: '1px dashed rgba(148, 163, 184, 0.3)',
-          borderRadius: 'var(--radius-md)',
-          color: '#cbd5e1',
-          fontSize: '0.85rem',
-          marginBottom: '16px'
-        }}>
+        <div className="ghost-spectator-notice">
           <RoleIcon roleId="GHOST" size={24} />
           <span>Bạn đã hy sinh. Linh hồn chỉ được quan sát và không thể nhắn tin trong phiên thảo luận.</span>
         </div>
