@@ -1,0 +1,28 @@
+{
+  "name": "WOLFHUNT — Dạ Thần Ma Sói Online",
+  "short_name": "WOLFHUNT",
+  "description": "Game Ma Sói Online đỉnh cao cho 4-16 người. Tự động quản trò, hiệu ứng điện ảnh, voice chat.",
+  "start_url": "/masoi/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#07090e",
+  "theme_color": "#07090e",
+  "categories": ["games", "entertainment", "social"],
+  "lang": "vi",
+  "icons": [
+    {
+      "src": "/masoi/images/wolfhunt_logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/masoi/images/og-preview.jpg",
+      "sizes": "1456x816",
+      "type": "image/jpeg",
+      "label": "WOLFHUNT - Màn hình chính"
+    }
+  ]
+}

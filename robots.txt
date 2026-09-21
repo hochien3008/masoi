@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://hochien3008.github.io/masoi/sitemap.xml
