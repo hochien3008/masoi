@@ -1,4 +1,5 @@
 import React from 'react';
+import { assetUrl } from '../utils/assetHelper';
 
 export default function Logo({ size, variant = 'compact', showTagline = false }) {
   if (variant === 'hero') {
@@ -6,7 +7,7 @@ export default function Logo({ size, variant = 'compact', showTagline = false })
       <div className="wolfhunt-hero-brand">
         <div className="wolfhunt-icon-wrapper floating">
           <img
-            src="/images/wolfhunt_logo.png"
+            src={assetUrl('/images/wolfhunt_logo.png')}
             alt="WOLFHUNT"
             className="wolfhunt-hero-img"
             style={{
@@ -36,7 +37,7 @@ export default function Logo({ size, variant = 'compact', showTagline = false })
   return (
     <div className="brand wolfhunt-header-brand">
       <img
-        src="/images/wolfhunt_logo.png"
+        src={assetUrl('/images/wolfhunt_logo.png')}
         alt="WOLFHUNT"
         style={{
           width: size || 36,

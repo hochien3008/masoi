@@ -3,6 +3,7 @@ import { Shield, Sparkles, Moon, Users, HelpCircle } from 'lucide-react';
 import { sounds } from '../utils/soundEffects';
 import RoleIcon from './RoleIcon';
 import Logo from './Logo';
+import { assetUrl } from '../utils/assetHelper';
 
 export default function Home({ onJoin, onCreate, initialRoomCode }) {
   const [name, setName] = useState(() => localStorage.getItem('nightfall_player_name') || '');
@@ -145,7 +146,7 @@ export default function Home({ onJoin, onCreate, initialRoomCode }) {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
               {/* Werewolf */}
               <div style={{ display: 'flex', gap: '12px', alignItems: 'center', background: 'rgba(239, 68, 68, 0.1)', padding: '10px', borderRadius: '10px', borderLeft: '3px solid #ef4444' }}>
-                <img src="/cards/WEREWOLF.jpg" alt="Ma Sói" style={{ width: '48px', height: '64px', objectFit: 'cover', borderRadius: '6px', border: '1px solid rgba(239, 68, 68, 0.4)' }} />
+                <img src={assetUrl('/cards/WEREWOLF.jpg')} alt="Ma Sói" style={{ width: '48px', height: '64px', objectFit: 'cover', borderRadius: '6px', border: '1px solid rgba(239, 68, 68, 0.4)' }} />
                 <div>
                   <strong style={{ color: '#ef4444', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.95rem' }}>
                     <RoleIcon roleId="WEREWOLF" size={20} /> Ma Sói (Werewolf)
@@ -156,7 +157,7 @@ export default function Home({ onJoin, onCreate, initialRoomCode }) {
 
               {/* Seer */}
               <div style={{ display: 'flex', gap: '12px', alignItems: 'center', background: 'rgba(168, 85, 247, 0.1)', padding: '10px', borderRadius: '10px', borderLeft: '3px solid #a855f7' }}>
-                <img src="/cards/SEER.jpg" alt="Tiên Tri" style={{ width: '48px', height: '64px', objectFit: 'cover', borderRadius: '6px', border: '1px solid rgba(168, 85, 247, 0.4)' }} />
+                <img src={assetUrl('/cards/SEER.jpg')} alt="Tiên Tri" style={{ width: '48px', height: '64px', objectFit: 'cover', borderRadius: '6px', border: '1px solid rgba(168, 85, 247, 0.4)' }} />
                 <div>
                   <strong style={{ color: '#a855f7', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.95rem' }}>
                     <RoleIcon roleId="SEER" size={20} /> Tiên Tri (Seer)
@@ -167,7 +168,7 @@ export default function Home({ onJoin, onCreate, initialRoomCode }) {
 
               {/* Doctor */}
               <div style={{ display: 'flex', gap: '12px', alignItems: 'center', background: 'rgba(6, 182, 212, 0.1)', padding: '10px', borderRadius: '10px', borderLeft: '3px solid #06b6d4' }}>
-                <img src="/cards/DOCTOR.jpg" alt="Bác Sĩ" style={{ width: '48px', height: '64px', objectFit: 'cover', borderRadius: '6px', border: '1px solid rgba(6, 182, 212, 0.4)' }} />
+                <img src={assetUrl('/cards/DOCTOR.jpg')} alt="Bác Sĩ" style={{ width: '48px', height: '64px', objectFit: 'cover', borderRadius: '6px', border: '1px solid rgba(6, 182, 212, 0.4)' }} />
                 <div>
                   <strong style={{ color: '#06b6d4', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.95rem' }}>
                     <RoleIcon roleId="DOCTOR" size={20} /> Bác Sĩ (Doctor)
@@ -178,7 +179,7 @@ export default function Home({ onJoin, onCreate, initialRoomCode }) {
 
               {/* Hunter */}
               <div style={{ display: 'flex', gap: '12px', alignItems: 'center', background: 'rgba(245, 158, 11, 0.1)', padding: '10px', borderRadius: '10px', borderLeft: '3px solid #f59e0b' }}>
-                <img src="/cards/HUNTER.jpg" alt="Thợ Săn" style={{ width: '48px', height: '64px', objectFit: 'cover', borderRadius: '6px', border: '1px solid rgba(245, 158, 11, 0.4)' }} />
+                <img src={assetUrl('/cards/HUNTER.jpg')} alt="Thợ Săn" style={{ width: '48px', height: '64px', objectFit: 'cover', borderRadius: '6px', border: '1px solid rgba(245, 158, 11, 0.4)' }} />
                 <div>
                   <strong style={{ color: '#f59e0b', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.95rem' }}>
                     <RoleIcon roleId="HUNTER" size={20} /> Thợ Săn (Hunter)
@@ -189,7 +190,7 @@ export default function Home({ onJoin, onCreate, initialRoomCode }) {
 
               {/* Witch */}
               <div style={{ display: 'flex', gap: '12px', alignItems: 'center', background: 'rgba(236, 72, 153, 0.1)', padding: '10px', borderRadius: '10px', borderLeft: '3px solid #ec4899' }}>
-                <img src="/cards/WITCH.jpg" alt="Phù Thủy" style={{ width: '48px', height: '64px', objectFit: 'cover', borderRadius: '6px', border: '1px solid rgba(236, 72, 153, 0.4)' }} />
+                <img src={assetUrl('/cards/WITCH.jpg')} alt="Phù Thủy" style={{ width: '48px', height: '64px', objectFit: 'cover', borderRadius: '6px', border: '1px solid rgba(236, 72, 153, 0.4)' }} />
                 <div>
                   <strong style={{ color: '#ec4899', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.95rem' }}>
                     <RoleIcon roleId="WITCH" size={20} /> Phù Thủy (Witch)
@@ -200,7 +201,7 @@ export default function Home({ onJoin, onCreate, initialRoomCode }) {
 
               {/* Fool */}
               <div style={{ display: 'flex', gap: '12px', alignItems: 'center', background: 'rgba(139, 92, 246, 0.1)', padding: '10px', borderRadius: '10px', borderLeft: '3px solid #8b5cf6' }}>
-                <img src="/cards/FOOL.jpg" alt="Kẻ Ngốc" style={{ width: '48px', height: '64px', objectFit: 'cover', borderRadius: '6px', border: '1px solid rgba(139, 92, 246, 0.4)' }} />
+                <img src={assetUrl('/cards/FOOL.jpg')} alt="Kẻ Ngốc" style={{ width: '48px', height: '64px', objectFit: 'cover', borderRadius: '6px', border: '1px solid rgba(139, 92, 246, 0.4)' }} />
                 <div>
                   <strong style={{ color: '#a78bfa', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.95rem' }}>
                     <RoleIcon roleId="FOOL" size={20} /> Kẻ Ngốc (Fool - Neutral)
@@ -211,7 +212,7 @@ export default function Home({ onJoin, onCreate, initialRoomCode }) {
 
               {/* Villager */}
               <div style={{ display: 'flex', gap: '12px', alignItems: 'center', background: 'rgba(16, 185, 129, 0.1)', padding: '10px', borderRadius: '10px', borderLeft: '3px solid #10b981' }}>
-                <img src="/cards/VILLAGER.jpg" alt="Dân Làng" style={{ width: '48px', height: '64px', objectFit: 'cover', borderRadius: '6px', border: '1px solid rgba(16, 185, 129, 0.4)' }} />
+                <img src={assetUrl('/cards/VILLAGER.jpg')} alt="Dân Làng" style={{ width: '48px', height: '64px', objectFit: 'cover', borderRadius: '6px', border: '1px solid rgba(16, 185, 129, 0.4)' }} />
                 <div>
                   <strong style={{ color: '#10b981', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.95rem' }}>
                     <RoleIcon roleId="VILLAGER" size={20} /> Dân Làng (Villager)
@@ -222,7 +223,7 @@ export default function Home({ onJoin, onCreate, initialRoomCode }) {
 
               {/* Ghost */}
               <div style={{ display: 'flex', gap: '12px', alignItems: 'center', background: 'rgba(148, 163, 184, 0.1)', padding: '10px', borderRadius: '10px', borderLeft: '3px solid #94a3b8' }}>
-                <img src="/cards/GHOST.jpg" alt="Linh Hồn" style={{ width: '48px', height: '64px', objectFit: 'cover', borderRadius: '6px', border: '1px solid rgba(148, 163, 184, 0.4)' }} />
+                <img src={assetUrl('/cards/GHOST.jpg')} alt="Linh Hồn" style={{ width: '48px', height: '64px', objectFit: 'cover', borderRadius: '6px', border: '1px solid rgba(148, 163, 184, 0.4)' }} />
                 <div>
                   <strong style={{ color: '#cbd5e1', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.95rem' }}>
                     <RoleIcon roleId="GHOST" size={20} /> Linh Hồn (Ghost)

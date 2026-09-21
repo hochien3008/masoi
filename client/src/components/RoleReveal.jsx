@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { CheckCircle, Eye, Sparkles } from 'lucide-react';
 import { sounds } from '../utils/soundEffects';
 import RoleIcon from './RoleIcon';
+import { assetUrl } from '../utils/assetHelper';
 
 export default function RoleReveal({ myRoleDetails, myPlayer, players, timer, onReady }) {
   const [flipped, setFlipped] = useState(false);
@@ -19,7 +20,7 @@ export default function RoleReveal({ myRoleDetails, myPlayer, players, timer, on
     ? players.filter(p => p.role === 'WEREWOLF' && p.id !== myPlayer?.id)
     : [];
 
-  const cardImgSrc = myRoleDetails?.id ? `/cards/${myRoleDetails.id}.jpg` : null;
+  const cardImgSrc = myRoleDetails?.id ? assetUrl(`/cards/${myRoleDetails.id}.jpg`) : null;
 
   return (
     <div style={{ textAlign: 'center', width: '100%' }}>
@@ -179,3 +180,4 @@ export default function RoleReveal({ myRoleDetails, myPlayer, players, timer, on
     </div>
   );
 }
+

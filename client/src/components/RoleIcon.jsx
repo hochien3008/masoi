@@ -1,10 +1,11 @@
 import React from 'react';
+import { assetUrl } from '../utils/assetHelper';
 
 export default function RoleIcon({ roleId, role, size = 28, style = {}, className = '' }) {
   const id = roleId || role?.id;
   if (!id) return null;
 
-  const iconSrc = `/icons/${id}.jpg`;
+  const iconSrc = assetUrl(`/icons/${id}.jpg`);
 
   return (
     <span
