@@ -19,10 +19,22 @@ import RoomSettingsModal from './components/RoomSettingsModal';
 import Logo from './components/Logo';
 import { webrtcManager } from './utils/webrtcManager';
 
+// Determine socket server URL
+const getSocketUrl = () => {
+  const localOverride = localStorage.getItem('nightfall_server_url');
+  if (localOverride) return localOverride;
+  if (import.meta.env.VITE_SERVER_URL) return import.meta.env.VITE_SERVER_URL;
+  if (typeof window !== 'undefined' && window.location.hostname.includes('github.io')) {
+    return 'https://masoi-d6ku.onrender.com';
+  }
+  return '/';
+};
+
 // Initialize socket connection
-const socket = io('/', {
+const socket = io(getSocketUrl(), {
   autoConnect: true,
-  reconnection: true
+  reconnection: true,
+  transports: ['websocket', 'polling']
 });
 
 export default function App() {

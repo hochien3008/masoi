@@ -32,6 +32,8 @@ jobs:
           npm install
 
       - name: Build client
+        env:
+          VITE_SERVER_URL: https://masoi-d6ku.onrender.com
         run: |
           cd client
           npm run build
